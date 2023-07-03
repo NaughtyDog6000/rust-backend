@@ -1,0 +1,18 @@
+[package]
+name = "axum-tets"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = { version = "0.6.18", features = ["headers"] } #web-framework
+dotenv = "0.15.0"
+serde = { version = "1.0.165", features = ["derive"] }
+serde_json = "1.0.99"
+sqlx = { version = "0.6.3", features = ["runtime-tokio-rustls", "postgres", "json" ] } #db con
+tokio = { version = "1.29.1", features = ["full"] } #Runtime
+tower-http = { version = "0.4.1", features = ["cors"] } #CORS
+
+[dev-dependencies]
+httpc-test = "0.1.4"
