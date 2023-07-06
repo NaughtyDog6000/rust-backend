@@ -7,7 +7,9 @@ edition = "2021"
 
 [dependencies]
 axum = { version = "0.6.18", features = ["headers"] } #web-framework
-dotenv = "0.15.0"
+bcrypt = "0.15.0" #hashing
+dotenv = "0.15.0" #reads .env file
+regex = "1.9.0" #NOT IN USE regular expressions
 serde = { version = "1.0.165", features = ["derive"] }
 serde_json = "1.0.99"
 sqlx = { version = "0.6.3", features = ["runtime-tokio-rustls", "postgres", "json" ] } #db con
