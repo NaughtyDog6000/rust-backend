@@ -28,12 +28,21 @@ pub async fn create_user(
 ) -> StatusCode {
     //parse into user struct
     let SignupUser {username,email,password} = request;
-    let hashpass: String = hash(password, DEFAULT_COST).unwrap();
 
-    println!("created a user; username: {username}, email: {email}, password hash: {hashpass} ");
     //verify validity of password, username etc 
+    let regex: Regex = Regex::new(r"^[0-9A-Za-z_]+$").unwrap();
+    if regex.is_match(&password) {
+        println!("password: {password}, is a vaild password (check by regex)");
+    } else {
+        print!("password: {password}, is not a valid password (regex)"); //never prints even when 401 is returned???
+        return StatusCode::UNAUTHORIZED;
+    }
 
     //check that a user with the email & username doesnt already exist
+
+    //hash the password so no plain text storage (im not the government)
+    let hashpass: String = hash(password, DEFAULT_COST).unwrap();
+    println!("created a user; username: {username}, email: {email}, password hash: {hashpass} ");
 
     //add user to database 
 
