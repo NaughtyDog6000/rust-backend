@@ -2,11 +2,12 @@
 
 // modules (other rust scripts used in the project)
 mod models;
+mod structs;
 
 
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
-use sqlx::postgres::PgPoolOptions;
+use sqlx::{postgres::PgPoolOptions, error::BoxDynError};
 
 use axum::{
     extract::Extension,
@@ -16,10 +17,10 @@ use axum::{
 };
 
 use dotenv;
-
+use std::error::Error;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn Error>>{
     println!("intialising");
 
     // load environment variables from the .env file 
@@ -38,6 +39,11 @@ async fn main() {
 
 
     // -- End Of Config --
+
+    // -- migrations ig --
+    sqlx::migrate!("./migrations").run(&pool).await?;
+    // -- end of migrations --
+
 
 
     let app = Router::new()
@@ -58,5 +64,7 @@ async fn main() {
         .expect("Failed to start server!");
 
     // end of server creation
+
+    Ok(())
 }
 

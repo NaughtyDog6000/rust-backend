@@ -4,6 +4,8 @@ use serde::Deserialize;
 use sqlx::{pool, PgPool};
 use bcrypt::{hash, DEFAULT_COST,};
 
+use crate::structs::build_user;
+
 pub fn router() -> Router {
     Router::new().route("/signup",
     get(|| async {"This does NOT support get requests"}).post(create_user)
@@ -26,7 +28,7 @@ pub async fn create_user(
     Json(request): Json<SignupUser>
 
 ) -> StatusCode {
-    //parse into user struct
+    //parse into temporary struct
     let SignupUser {username,email,password} = request;
 
     //verify validity of password, username etc 
@@ -38,13 +40,30 @@ pub async fn create_user(
         return StatusCode::UNAUTHORIZED;
     }
 
-    //check that a user with the email & username doesnt already exist
-
     //hash the password so no plain text storage (im not the government)
     let hashpass: String = hash(password, DEFAULT_COST).unwrap();
     println!("created a user; username: {username}, email: {email}, password hash: {hashpass} ");
 
+    //parse into the permanenet user struct
+    let user: crate::structs::User = build_user(username, email, hashpass) ;
+
+    //check that a user with the email & username doesnt already exist
+    
+
     //add user to database 
+    // let query = "
+    // INSERT INTO users (username, email, password_hash, epoch_signup_time)
+    // VALUES ($1, $2, $3, $4);
+    // ";
+    sqlx::query(
+        "INSERT INTO users (username, email, password_hash, epoch_signup_time)
+            VALUES ($1, $2, $3, $4);"
+    )
+    .bind(user.username)
+    .bind(user.email)
+    .bind(user.password_hash)
+    .bind(user.signup_time)
+    .execute(&pool).await;
 
     // should add a random delay so that you cannot do some funky stuff to see if a user exists
     // or password funky stuff
