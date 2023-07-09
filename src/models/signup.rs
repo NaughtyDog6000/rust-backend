@@ -1,10 +1,12 @@
+use std::string;
+
 use axum::{Extension, Json, Router, routing::{get}, http::StatusCode};
 use regex::Regex;
-use serde::Deserialize;
-use sqlx::{pool, PgPool};
+use serde::{Deserialize, __private::ser::FlatMapSerializeStruct};
+use sqlx::{pool, PgPool, postgres::PgAdvisoryLockKey};
 use bcrypt::{hash, DEFAULT_COST,};
 
-use crate::structs::build_user;
+use crate::structs::{build_user, User};
 
 pub fn router() -> Router {
     Router::new().route("/signup",
@@ -41,25 +43,27 @@ pub async fn create_user(
     }
 
     //hash the password so no plain text storage (im not the government)
-    let hashpass: String = hash(password, DEFAULT_COST).unwrap();
+    let hashpass: String = hash(&password, DEFAULT_COST).unwrap();
     println!("created a user; username: {username}, email: {email}, password hash: {hashpass} ");
 
     //parse into the permanenet user struct
-    let user: crate::structs::User = build_user(username, email, hashpass) ;
+    let mut user: crate::structs::User = build_user(username, email, hashpass) ;
 
     //check that a user with the email & username doesnt already exist
-    
+    let exists: bool = check_user_exists(&user.username, &pool).await;
+
+    match exists {
+        true => return StatusCode::BAD_REQUEST,
+        _ => println!("user with that name doesn't exist, finishing creation"),
+    }
 
     //add user to database 
-    // let query = "
-    // INSERT INTO users (username, email, password_hash, epoch_signup_time)
-    // VALUES ($1, $2, $3, $4);
-    // ";
+
     sqlx::query(
         "INSERT INTO users (username, email, password_hash, epoch_signup_time)
             VALUES ($1, $2, $3, $4);"
     )
-    .bind(user.username)
+    .bind(&user.username)
     .bind(user.email)
     .bind(user.password_hash)
     .bind(user.signup_time)
@@ -72,3 +76,19 @@ pub async fn create_user(
     StatusCode::OK
 }
 
+pub async fn check_user_exists(username: &String, pool: &PgPool) -> bool {
+    let query_res = sqlx::query(
+        "SELECT id, epoch_signup_time FROM users WHERE username = $1"
+    )
+    .bind(&username)
+    .fetch_optional(pool);
+
+    // if query_res { //
+    //     println!("user with the same username already exists");
+    //     return true;
+    // }
+
+        // TB WORKED ON ----!_!_!_!_!_!_!_
+
+    return false;
+}
