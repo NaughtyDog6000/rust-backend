@@ -1,11 +1,12 @@
 use std::string;
 
-use axum::{Extension, Json, Router, routing::{get}, http::StatusCode};
+use axum::{Extension, Json, Router, routing::get, http::StatusCode};
 use regex::Regex;
 use serde::{Deserialize, __private::ser::FlatMapSerializeStruct};
 use sqlx::{pool, PgPool, postgres::PgAdvisoryLockKey};
 use bcrypt::{hash, DEFAULT_COST,};
-
+use rand::Rng;
+use std::time::Duration;
 use crate::structs::{build_user, User};
 
 pub fn router() -> Router {
@@ -53,7 +54,10 @@ pub async fn create_user(
     let exists: bool = check_user_exists(&user.username, &pool).await;
 
     match exists {
-        true => return StatusCode::BAD_REQUEST,
+        true => {
+            println!("user with username already exists, canceling creation");
+            return StatusCode::BAD_REQUEST
+        }
         _ => println!("user with that name doesn't exist, finishing creation"),
     }
 
@@ -66,11 +70,13 @@ pub async fn create_user(
     .bind(&user.username)
     .bind(user.email)
     .bind(user.password_hash)
-    .bind(user.signup_time)
+    .bind(user.epoch_signup_time)
     .execute(&pool).await;
 
     // should add a random delay so that you cannot do some funky stuff to see if a user exists
     // or password funky stuff
+    let sleepy_time = rand::thread_rng().gen_range(Duration::from_millis(100)..=Duration::from_millis(500));
+    tokio::time::sleep(sleepy_time).await;
 
     //return success code 200
     StatusCode::OK
@@ -81,14 +87,34 @@ pub async fn check_user_exists(username: &String, pool: &PgPool) -> bool {
         "SELECT id, epoch_signup_time FROM users WHERE username = $1"
     )
     .bind(&username)
-    .fetch_optional(pool);
+    .fetch_optional(pool)
+    .await;
 
-    // if query_res { //
-    //     println!("user with the same username already exists");
-    //     return true;
-    // }
+    let mut res = sqlx::query_as::<_, User>(
+        "SELECT * FROM users WHERE username = $1"
+    )
+    .bind(&username)
+    .fetch_one(pool)
+    .await;
 
+    // let resp = sqlx::query_as!(User,
+    // "
+    // SELECT id, epoch_signup_time
+    // FROM users
+    // WHERE username = ?
+    // ",
+    // organization
+    // )
+    // .fetch_all(&pool)
+    // .await?;
+    if res.is_err() {
+        return false;
+    }
+    println!("response: {:?}", res);
+    
+    // println!("{:?}", query_res);
+    
         // TB WORKED ON ----!_!_!_!_!_!_!_
 
-    return false;
+    return true;
 }
