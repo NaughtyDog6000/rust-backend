@@ -3,7 +3,7 @@
 // modules (other rust scripts used in the project)
 mod models;
 mod structs;
-
+mod utils;
 
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
@@ -50,6 +50,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .route("/", get(|| async { Html("Hello <b>World!!</b>") } ))
     // .route("/signup", post(models::signup::create_user()))
     .merge(models::signup::router())
+    .merge(models::signin::router())
     .layer(cors)
     .layer(Extension(pool));
 

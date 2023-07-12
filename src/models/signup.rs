@@ -7,7 +7,7 @@ use sqlx::{pool, PgPool, postgres::PgAdvisoryLockKey};
 use bcrypt::{hash, DEFAULT_COST,};
 use rand::Rng;
 use std::time::Duration;
-use crate::structs::{build_user, User};
+use crate::structs::{build_user, User, get_timestamp};
 
 pub fn router() -> Router {
     Router::new().route("/signup",
@@ -47,11 +47,8 @@ pub async fn create_user(
     let hashpass: String = hash(&password, DEFAULT_COST).unwrap();
     println!("created a user; username: {username}, email: {email}, password hash: {hashpass} ");
 
-    //parse into the permanenet user struct
-    let mut user: crate::structs::User = build_user(username, email, hashpass) ;
-
     //check that a user with the email & username doesnt already exist
-    let exists: bool = check_user_exists(&user.username, &pool).await;
+    let exists: bool = check_user_exists(&username, &pool).await;
 
     match exists {
         true => {
@@ -61,18 +58,21 @@ pub async fn create_user(
         _ => println!("user with that name doesn't exist, finishing creation"),
     }
 
-    //add user to database 
+    
 
+    //add user to database 
+    //ToDo: return the id, timestamp etc to be able to get the full user struct
     sqlx::query(
         "INSERT INTO users (username, email, password_hash, epoch_signup_time)
             VALUES ($1, $2, $3, $4);"
     )
-    .bind(&user.username)
-    .bind(user.email)
-    .bind(user.password_hash)
-    .bind(user.epoch_signup_time)
+    .bind(&username)
+    .bind(email)
+    .bind(hashpass)
+    .bind(get_timestamp())
     .execute(&pool).await;
 
+   
     // should add a random delay so that you cannot do some funky stuff to see if a user exists
     // or password funky stuff
     let sleepy_time = rand::thread_rng().gen_range(Duration::from_millis(100)..=Duration::from_millis(500));
@@ -83,19 +83,24 @@ pub async fn create_user(
 }
 
 pub async fn check_user_exists(username: &String, pool: &PgPool) -> bool {
-    let query_res = sqlx::query(
-        "SELECT id, epoch_signup_time FROM users WHERE username = $1"
-    )
-    .bind(&username)
-    .fetch_optional(pool)
-    .await;
+    // let query_res = sqlx::query(
+    //     "SELECT id, epoch_signup_time FROM users WHERE username = $1"
+    // )
+    // .bind(&username)
+    // .fetch_optional(pool)
+    // .await;
 
-    let mut res = sqlx::query_as::<_, User>(
+    let res = sqlx::query_as::<_, User>(
         "SELECT * FROM users WHERE username = $1"
     )
     .bind(&username)
     .fetch_one(pool)
     .await;
+
+    if res.is_err() {
+        return false;
+    }
+    let user: User = res.unwrap(); 
 
     // let resp = sqlx::query_as!(User,
     // "
@@ -107,10 +112,9 @@ pub async fn check_user_exists(username: &String, pool: &PgPool) -> bool {
     // )
     // .fetch_all(&pool)
     // .await?;
-    if res.is_err() {
-        return false;
-    }
-    println!("response: {:?}", res);
+
+    println!("response: {:?}", user);
+    println!("{}", user.id);
     
     // println!("{:?}", query_res);
     
