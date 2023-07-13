@@ -22,6 +22,7 @@ use std::error::Error;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>>{
     println!("intialising");
+    let args: Vec<String> = std::env::args().collect();
 
     // load environment variables from the .env file 
     dotenv::dotenv().ok();
@@ -41,7 +42,13 @@ async fn main() -> Result<(), Box<dyn Error>>{
     // -- End Of Config --
 
     // -- migrations ig --
-    sqlx::migrate!("./migrations").run(&pool).await?;
+    if (args.len() > 1) {
+        if (&args[1] == "migrate") {
+            println!("MIGRATING");
+            sqlx::migrate!("./migrations").run(&pool).await?;
+        }
+    }
+    
     // -- end of migrations --
 
 

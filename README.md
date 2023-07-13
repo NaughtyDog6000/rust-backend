@@ -9,3 +9,8 @@ it will include: **Accounts**, Player **Achievements** (if I get round to it), *
 **Routes** - [] different routes for different things  
 **DB** - [x] connection to read/write to and from  
 **DB** - [] Atomic so there is no chance of a crash or error causing unexpected behavior  
+
+### Small notes
+
+**cargo run** - runs the server **without** migrating the DB first
+**cargo run migrate** - migrates the server then runs
