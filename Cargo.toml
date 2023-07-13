@@ -17,6 +17,3 @@ serde_json = "1.0.99"
 sqlx = { version = "0.6.3", features = ["runtime-tokio-rustls", "postgres", "json", "chrono" ] } #db con
 tokio = { version = "1.29.1", features = ["full"] } #Runtime
 tower-http = { version = "0.4.1", features = ["cors"] } #CORS
-
-[dev-dependencies]
-httpc-test = "0.1.4"
