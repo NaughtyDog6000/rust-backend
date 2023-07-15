@@ -10,8 +10,9 @@ pub struct User {
     pub email: String,
     pub password_hash: String,
     pub epoch_signup_time: i64,
-
 }
+
+
 
 pub fn build_user(
     id: i64,
@@ -33,6 +34,8 @@ pub fn build_user(
     }
 
 }
+
+
 
 pub fn get_timestamp() -> i64 {
     let now = SystemTime::now();

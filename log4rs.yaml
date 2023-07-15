@@ -1,0 +1,32 @@
+# this was coppied from a tutorial for logging @
+#  https://tms-dev-blog.com/log-to-a-file-in-rust-with-log4rs/
+appenders:
+  console_log:
+    kind: console
+    encoder:
+      pattern: "{h({d(%Y-%m-%d %H:%M:%S)(utc)} - {l}: {m}{n})}"
+  main_log_file:
+    kind: file
+    path: "logging/main.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)(utc)} - {h({l})}: {m}{n}"
+ 
+  trace_log_file:
+    kind: file
+    path: "logging/trace.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)(utc)} - {h({l})}: {m}{n}"
+
+
+root:
+  level: info
+  appenders:
+    - main_log_file
+    - console_log
+
+
+loggers:
+  step:
+    level: trace
+    appenders:
+      - trace_log_file

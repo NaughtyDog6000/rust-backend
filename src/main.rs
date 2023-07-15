@@ -18,11 +18,21 @@ use axum::{
 
 use dotenv;
 use std::error::Error;
+use log::{trace, debug, info, warn, error};
+use log4rs;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>>{
     println!("intialising");
     let args: Vec<String> = std::env::args().collect();
+
+    //Logging file
+    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+    trace!("detailed tracing info");
+    debug!("debug info");
+    info!("relevant general info");
+    warn!("warning this program doesn't do much");
+    error!("error message here");
 
     // load environment variables from the .env file 
     dotenv::dotenv().ok();

@@ -37,3 +37,7 @@ pub async fn get_user(
     let user: User = res.unwrap();
     return Ok(user); 
 }
+
+pub fn create_jwt(user: User) -> String {
+    "dwaioj".to_string()
+}
