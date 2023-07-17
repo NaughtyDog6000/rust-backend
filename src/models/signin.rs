@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use sqlx::{pool, PgPool, postgres::PgAdvisoryLockKey};
 use bcrypt::{verify, hash, DEFAULT_COST};
 use rand::Rng;
-use std::{time::Duration, arch::x86_64::_CMP_TRUE_UQ};
+use std::time::Duration;
 
 use crate::{utils::{get_user, create_jwt}, structs::User};
 
