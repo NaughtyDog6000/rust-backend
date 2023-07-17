@@ -17,3 +17,6 @@ Cargo.lock
 
 #Logging Files
 /Logging
+
+#JWT Key
+key.txt

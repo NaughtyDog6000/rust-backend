@@ -10,10 +10,11 @@ axum = { version = "0.6.18", features = ["headers"] } #web-framework
 bcrypt = "0.15.0" #hashing
 chrono = { version = "0.4.26", features = ["serde"] }
 dotenv = "0.15.0" #reads .env file
+jwt-simple = "0.11.6"
 log = "0.4.19" # dependancy for log4rs
 log4rs = "1.2.0" #logging to file
 rand = "0.8.5"
-regex = "1.9.0" #NOT IN USE regular expressions
+regex = "1.9.0"  #regular expressions
 serde = { version = "1.0.165", features = ["derive"] }
 serde_json = "1.0.99"
 sqlx = { version = "0.6.3", features = ["runtime-tokio-rustls", "postgres", "json", "chrono" ] } #db con

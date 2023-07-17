@@ -5,7 +5,8 @@ mod models;
 mod structs;
 mod utils;
 
-use std::net::SocketAddr;
+use std::{fs::{*, self}, net::SocketAddr, io::Write, path::Path};
+use jwt_simple::prelude::HS256Key;
 use tower_http::cors::{Any, CorsLayer};
 use sqlx::{postgres::PgPoolOptions, error::BoxDynError};
 
@@ -24,21 +25,53 @@ use log4rs;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>>{
     println!("intialising");
+    
+        //Logging file
+        log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+        // trace!("detailed tracing info");
+        // debug!("debug info");
+        // info!("relevant general info");
+        // warn!("this may be bad, you should take a look");
+        // error!("guys you whould come take a look, something bads just happened");
+    
+    
     let args: Vec<String> = std::env::args().collect();
-
-    //Logging file
-    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    trace!("detailed tracing info");
-    debug!("debug info");
-    info!("relevant general info");
-    warn!("warning this program doesn't do much");
-    error!("error message here");
 
     // load environment variables from the .env file 
     dotenv::dotenv().ok();
     let envkey = "DB";
     let dbconstring = dotenv::var(envkey).unwrap();
     // println!("connection string: {}", dbconstring);
+
+
+    //create a key
+    if Path::new("key.txt").exists() == false {
+        warn!("new key being generated");
+
+        let mut file = File::create("key.txt")?;
+        let key = HS256Key::generate();
+        println!("KEY FROM GENERATION: {:?}", key);
+
+
+        file.write_all(&key.to_bytes());
+    }
+
+    //read key from file
+    let key: HS256Key;
+    {
+        info!("reading key");
+
+        let mut file = fs::read("key.txt");
+        key = HS256Key::from_bytes(&file.unwrap());
+
+    }
+
+    println!("KEY FROM FILE: {:?}", key);
+
+
+
+
+
 
     let cors = CorsLayer::new().allow_origin(Any);
 
@@ -54,7 +87,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     // -- migrations ig --
     if (args.len() > 1) {
         if (&args[1] == "migrate") {
-            println!("MIGRATING");
+            warn!("MIGRATING");
             sqlx::migrate!("./migrations").run(&pool).await?;
         }
     }
@@ -68,9 +101,10 @@ async fn main() -> Result<(), Box<dyn Error>>{
     // .route("/signup", post(models::signup::create_user()))
     .merge(models::signup::router())
     .merge(models::signin::router())
+    .merge(models::test_token::router())
     .layer(cors)
-    .layer(Extension(pool));
-
+    .layer(Extension(pool))
+    .layer(Extension(key));
 
     // -- create  server on socket/address 
 

@@ -9,6 +9,8 @@ it will include: **Accounts**, Player **Achievements** (if I get round to it), *
 **Routes** - [] different routes for different things  
 **DB** - [x] connection to read/write to and from  
 **DB** - [] Atomic so there is no chance of a crash or error causing unexpected behavior  
+**JWT/access token** - send/recieve to browser/application
+<!-- **JWT** - caches to browser so that it can be stored between site visits -->
 
 ### Small notes
 

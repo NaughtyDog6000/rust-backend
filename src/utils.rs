@@ -1,7 +1,7 @@
-use crate::structs::{build_user, User, get_timestamp};
+use crate::structs::{build_user, User, get_timestamp, JTWCustomClaims};
 use sqlx::{pool, PgPool, database::HasValueRef,};
 use axum::Extension;
-
+use jwt_simple::prelude::*;
 
 
 
@@ -38,6 +38,16 @@ pub async fn get_user(
     return Ok(user); 
 }
 
-pub fn create_jwt(user: User) -> String {
-    "dwaioj".to_string()
+pub fn create_jwt(key:HS256Key, user: User, expires_seconds: u64) -> String {
+
+    let custom_claims = JTWCustomClaims {
+        id: user.id,
+        username: user.username,
+    };
+    let claims = Claims::with_custom_claims(custom_claims, Duration::from_secs(expires_seconds));
+    // let claims = Claims::create(Duration::from_secs(expires_seconds));
+    let token: String = key.authenticate(claims).expect("could not authenticate/generate a JWT");
+
+
+    return token;
 }

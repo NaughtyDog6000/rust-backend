@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 
@@ -12,6 +12,11 @@ pub struct User {
     pub epoch_signup_time: i64,
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct JTWCustomClaims {
+    pub id: i64,
+    pub username: String,
+}
 
 
 pub fn build_user(

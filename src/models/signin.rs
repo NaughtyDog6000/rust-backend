@@ -1,4 +1,5 @@
 use axum::{Extension, Json, Router, routing::get, http::StatusCode, response::{IntoResponse, Response}};
+use jwt_simple::prelude::HS256Key;
 use log::info;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -27,6 +28,7 @@ pub fn router() -> Router {
 }
 
 pub async fn signin (
+    Extension(key): Extension<HS256Key>,
     Extension(pool): Extension<PgPool>,
     Json(request): Json<SigninRequestParams>
 ) -> (StatusCode, Json<Value>) {
@@ -55,16 +57,20 @@ pub async fn signin (
 
 
     //return a jwt or access token thing idk fuitre me problem or not if the password is incoreect
+
+
+
+
+
     match pass_correct {
         true => {
             return (StatusCode::OK, Json(json!({
-                "JWT": create_jwt(user)
+                "token": create_jwt(key, user, 5)
             })));
         }
         false => {}
     }
     
-    let jwt: String = String::from("dapowjd");
 
     
 
