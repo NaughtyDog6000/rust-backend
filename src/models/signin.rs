@@ -1,4 +1,4 @@
-use axum::{Extension, Json, Router, routing::get, http::StatusCode, response::{IntoResponse, Response}};
+use axum::{Extension, Json, Router, routing::get, routing::post, http::StatusCode, response::{IntoResponse, Response}};
 use jwt_simple::prelude::HS256Key;
 use log::info;
 use serde::Deserialize;
@@ -23,7 +23,7 @@ pub struct SigninRequestParams {
 
 pub fn router() -> Router {
     Router::new().route("/signin",
-    get(|| async {"This does NOT support get requests"}).post(signin)
+    post(signin).get(|| async {"This does NOT support get requests"})
     )
 }
 
