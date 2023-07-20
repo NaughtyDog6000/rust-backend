@@ -8,10 +8,6 @@ use sqlx::{pool, PgPool};
 
 use crate::structs::JTWCustomClaims;
 
-struct Claims {
-    pub id: i64,
-    pub username: String,
-}
 
 
 pub fn router() -> Router {
