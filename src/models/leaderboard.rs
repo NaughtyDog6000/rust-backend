@@ -19,6 +19,13 @@ pub struct QueryParams {
 }
 
 
+// as u can guess it is the default value should it be undefined
+impl Default for QueryParams {
+    fn default() -> Self {
+        Self { length: 10, offset: 0}
+    }
+}
+
 pub fn router() -> Router {
     Router::new().route("/scores/global/leaderboard",
         get(leaderboard)
@@ -31,6 +38,8 @@ pub async fn leaderboard(
     Extension(pool): Extension<PgPool>,
     query_params: Query<QueryParams>,
 ) -> (StatusCode, Json<Value>) {
+    let length = query_params.length;
+    let offset = query_params.offset;
 
-    (StatusCode::OK, Json(json!("da")))
+    (StatusCode::OK, Json(json!(format!("length: {}, offset: {}.",length,offset))))
 }

@@ -102,6 +102,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::signup::router())
     .merge(models::signin::router())
     .merge(models::test_token::router())
+    .merge(models::leaderboard::router())
     .layer(cors)
     .layer(Extension(pool))
     .layer(Extension(key));

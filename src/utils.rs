@@ -1,4 +1,5 @@
 use crate::structs::{build_user, User, get_timestamp, JTWCustomClaims};
+use log::warn;
 use sqlx::{pool, PgPool, database::HasValueRef,};
 use axum::Extension;
 use jwt_simple::prelude::*;
@@ -50,4 +51,14 @@ pub fn create_jwt(key:HS256Key, user: User, expires_seconds: u64) -> String {
 
 
     return token;
+}
+
+pub fn get_scores_default(
+    Extension(pool): Extension<PgPool>,
+) -> Result<User, String>  {
+    
+
+
+    warn!("THIS FUNCTION IS INCOMPLETE");
+    Err(String::from("INCOMPLETE FUNCTION"))
 }
