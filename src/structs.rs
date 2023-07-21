@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-
+// -- TABLES --
 
 #[derive(Deserialize, sqlx::FromRow, Debug)]
 pub struct User {
@@ -11,6 +11,17 @@ pub struct User {
     pub password_hash: String,
     pub epoch_signup_time: i64,
 }
+
+#[derive(Deserialize, sqlx::FromRow, Debug)]
+pub struct Score {
+    pub id: i64,
+    pub user_id: i64,
+    pub epoch_upload_time: i64,
+    pub score: i32,
+    pub game_mode: String,
+}
+
+// -- END OF TABLES --
 
 #[derive(Deserialize, Serialize)]
 pub struct JTWCustomClaims {
