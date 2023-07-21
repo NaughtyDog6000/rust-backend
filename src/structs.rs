@@ -17,6 +17,8 @@ pub struct Score {
     pub id: i64,
     pub user_id: i64,
     pub epoch_upload_time: i64,
+    pub epoch_game_start_time: i64,
+    pub epoch_game_end_time: i64,
     pub score: i32,
     pub game_mode: String,
 }

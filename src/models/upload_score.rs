@@ -14,6 +14,12 @@ use serde_json::{json, Value};
 
 use crate::structs::Score;
 
+#[derive(Deserialize)]
+pub struct UploadScoreRequestParams {
+    token: String,
+    score: i64,
+    gamemode: String
+}
 
 pub fn router() -> Router {
     Router::new().route("/scores/upload",
@@ -25,7 +31,11 @@ pub fn router() -> Router {
 pub async fn leaderboard(    
     Extension(key): Extension<HS256Key>,
     Extension(pool): Extension<PgPool>,
+    Json(request): Json<UploadScoreRequestParams>,
 ) -> (StatusCode, Json<Value>) {
+    // -- parse the Request Params into struct --
+
+    println!("TOKEN: {}, SCORE: {}, Gamemode: {}, ", request.token, request.score, request.gamemode);
 
     // -- check for TOKEN to allow the request/higher request amounts --
     warn!("chacking for token not currently being done");
