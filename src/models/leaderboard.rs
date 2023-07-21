@@ -40,14 +40,23 @@ pub async fn leaderboard(
     Extension(pool): Extension<PgPool>,
     query_params: Option<Query<QueryParams>>,
 ) -> (StatusCode, Json<Value>) {
-    //both paramaters must be provided otherwise it defaults
+
+    // -- GET THE QUERY PARAMETERS --
+    //all paramaters must be provided otherwise it defaults
     let Query(query_params) = query_params.unwrap_or_default();
     let length: i32 = query_params.length as i32;
+    let offset: i32 = query_params.offset as i32;
+
+    // -- check for TOKEN to allow the request/higher request amounts --
+    warn!("chacking for token not currently being done");
+
+    // -- apply limitations (min & max request amounts) -- 
+
     if length == 0 {
         return (StatusCode::BAD_REQUEST, Json(json!("length (number of records requested) cannot be 0")));
     }
 
-    let offset: i32 = query_params.offset as i32;
+    // -- make query to database for the records (scores) requested --
 
     let res: Result<Vec<Score>, sqlx::Error>;
 
@@ -59,9 +68,9 @@ pub async fn leaderboard(
     .bind(&offset)
     .fetch_all(&pool).await;
 
-    // println!("response: {:?}", &res.unwrap());
-
+    let response = res.unwrap(); 
+    info!("response: {:?}", &response);
     // (StatusCode::OK, Json(json!(format!("length: {}, offset: {}.",length,offset))))
-    (StatusCode::OK, Json(json!(format!("{:?}",res.unwrap()))))
+    (StatusCode::OK, Json(json!(response)))
 
 }

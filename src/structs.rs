@@ -12,7 +12,7 @@ pub struct User {
     pub epoch_signup_time: i64,
 }
 
-#[derive(Deserialize, sqlx::FromRow, Debug)]
+#[derive(Serialize, Deserialize, sqlx::FromRow, Debug)]
 pub struct Score {
     pub id: i64,
     pub user_id: i64,
