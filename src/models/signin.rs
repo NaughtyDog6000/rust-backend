@@ -65,7 +65,7 @@ pub async fn signin (
     match pass_correct {
         true => {
             return (StatusCode::OK, Json(json!({
-                "token": create_jwt(key, user, 5)
+                "token": create_jwt(key, user, 600)
             })));
         }
         false => {}

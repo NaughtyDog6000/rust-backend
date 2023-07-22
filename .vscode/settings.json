@@ -4,5 +4,5 @@
         ".\\Cargo.toml"
     ],
     "rust-analyzer.showUnlinkedFileNotification": false,
-    "discord.enabled": false
+    "discord.enabled": true
 }
