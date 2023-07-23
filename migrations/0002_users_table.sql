@@ -1,2 +1,2 @@
 ALTER TABLE users
-ADD epoch_signup_time BIGINT;
+ADD COLUMN IF NOT EXISTS epoch_signup_time BIGINT;

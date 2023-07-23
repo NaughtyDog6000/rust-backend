@@ -1,4 +1,4 @@
-CREATE TABLE scores (
+CREATE TABLE IF NOT EXISTS scores (
     id BIGSERIAL NOT NULL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     epoch_upload_time BIGINT NOT NULL,
