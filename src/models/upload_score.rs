@@ -49,14 +49,14 @@ pub async fn leaderboard(
     let token_valid: bool = true;
 
     let username: String;
-    let user_id: String;
+    let user_id: i64;
 
     // -- extract user_id from token --
     let claims = key.verify_token::<JTWCustomClaims>(&request.token, Default::default());
     match &claims {
         Ok(claims) => {
             username = claims.custom.username.clone();
-            user_id = claims.custom.username.clone();
+            user_id = claims.custom.id.clone();
             info!("Signin of: {}, id: {}", &username, &user_id);
 
         }
@@ -74,27 +74,26 @@ pub async fn leaderboard(
 
     let res = sqlx::query_as::<_, Score>(
         "SELECT * FROM scores
-        WHERE epoch_game_start_time = $1 " //select one where user id & start time matches
+        WHERE user_id = $1 AND epoch_game_start_time = $2;" //select one where user id & start time matches
     )
     .bind(&user_id)
     .bind(request.epoch_game_start_time)
-    .fetch_optional(&pool).await;
+    .fetch_one(&pool).await;
 
-    // if it already exists return error.
-    if res.is_err() {
+    // if it already exists return an error (already uploaded).
+    if res.is_ok() {
+        info!("response: {:?}", &res.unwrap());
         return (StatusCode::INTERNAL_SERVER_ERROR, 
             Json(json!("an internal error occured? ocured? occurd? while checking if this record already exists")));
     }
-    let response = res.unwrap(); 
-    info!("response: {:?}", &response);
-    match response {
-        Some(_) => { return (StatusCode::ALREADY_REPORTED, Json(json!("this game was already uploaded"))); },
-        None => {}
-    }
+    
+    // if  { return (StatusCode::ALREADY_REPORTED, Json(json!("this game was already uploaded"))); },
+
 
     // upload the record to the scores table
 
-    sqlx::query("INSERT INTO scores (user_id, score, game_mode, epoch_upload_time, epoch_game_start_time, epoch_game_end_time)
+
+    let resp = sqlx::query("INSERT INTO scores (user_id, score, game_mode, epoch_upload_time, epoch_game_start_time, epoch_game_end_time)
                 VALUES ($1, $2, $3, $4, $5, $6)
     ")
     .bind(user_id)
@@ -103,8 +102,9 @@ pub async fn leaderboard(
     .bind(get_timestamp())
     .bind(request.epoch_game_start_time)
     .bind(request.epoch_game_end_time)
-    .execute(&pool);
+    .execute(&pool).await;
 
+    info!("{:?}", resp);
     // (StatusCode::OK, Json(json!(format!("length: {}, offset: {}.",length,offset))))
     (StatusCode::OK, Json(json!("score record creation successful")))
 

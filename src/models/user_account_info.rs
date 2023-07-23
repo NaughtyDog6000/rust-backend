@@ -16,7 +16,7 @@ use serde_json::{json, Value};
 
 
 pub fn router() -> Router {
-    Router::new().route("/profile/:id",
+    Router::new().route("/profile",
         get(|| async {"this is not done"})
         .post(|| async {"This does NOT support POST requests"})
     )

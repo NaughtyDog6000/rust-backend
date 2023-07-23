@@ -1,9 +1,10 @@
 use std::{string, time::Duration};
 
-use axum::{Extension, Json, Router, routing::get, http::StatusCode};
+use axum::{Extension, Json, Router, routing::get, http::StatusCode, };
+use log::{warn, error};
 use rand::Rng;
 use regex::Regex;
-use serde::{Deserialize, __private::ser::FlatMapSerializeStruct};
+use serde::Deserialize;
 use sqlx::{pool, PgPool, postgres::PgAdvisoryLockKey};
 use bcrypt::{hash, DEFAULT_COST,};
 
@@ -39,9 +40,9 @@ pub async fn create_user(
         //check characters used 
     let regex: Regex = Regex::new(r"^[0-9A-Za-z_]+$").unwrap();
     if regex.is_match(&username) {
-        println!("password: {username}, is a vaild username (check by regex)");
+        warn!("password: {username}, is a vaild username (check by regex)");
     } else {
-        println!("password: {username}, is not a valid username (regex)"); //never prints even when 401 is returned???
+        warn!("password: {username}, is not a valid username (regex)"); //never prints even when 401 is returned???
         return StatusCode::BAD_REQUEST;
     }
 
@@ -95,14 +96,17 @@ pub async fn check_user_exists(username: &String, pool: &PgPool) -> bool {
         "SELECT id, epoch_signup_time FROM users WHERE username = $1"
     )
     .bind(&username)
-    .fetch_optional(pool);
+    .fetch_optional(pool).await;
 
-    // if query_res { //
-    //     println!("user with the same username already exists");
-    //     return true;
-    // }
+    if query_res.is_err() {
+        error!("query returned an error");
+        return false;
+    }
 
-        // TB WORKED ON ----!_!_!_!_!_!_!_
-
-    return true;
+    if query_res.unwrap().is_some()
+    {
+        return true;
+    } else {
+        return false;
+    }
 }
