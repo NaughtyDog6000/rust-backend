@@ -1,7 +1,7 @@
 use std::{string, time::Duration};
 
 use axum::{Extension, Json, Router, routing::get, http::StatusCode, };
-use log::{warn, error};
+use log::{warn, error, info};
 use rand::Rng;
 use regex::Regex;
 use serde::Deserialize;
@@ -54,7 +54,6 @@ pub async fn create_user(
 
     //hash the password so no plain text storage (im not the government)
     let hashpass: String = hash(&password, DEFAULT_COST).unwrap();
-    println!("created a user; username: {username}, email: {email}, password hash: {hashpass} ");
 
     //check that a user with the email & username doesnt already exist
     let exists: bool = check_user_exists(&username, &pool).await;
@@ -76,10 +75,12 @@ pub async fn create_user(
             VALUES ($1, $2, $3, $4);"
     )
     .bind(&username)
-    .bind(email)
-    .bind(hashpass)
+    .bind(&email)
+    .bind(&hashpass)
     .bind(get_timestamp())
     .execute(&pool).await;
+
+    info!("created a user; username: {username}, email: {email}, password hash: {hashpass} ");
 
    
     // should add a random delay so that you cannot do some funky stuff to see if a user exists

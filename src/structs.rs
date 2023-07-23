@@ -29,6 +29,7 @@ pub struct Score {
 pub struct JTWCustomClaims {
     pub id: i64,
     pub username: String,
+    pub creation_time: i64,
 }
 
 
