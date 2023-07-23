@@ -1,12 +1,12 @@
-use std::string;
+use std::{string, time::Duration};
 
 use axum::{Extension, Json, Router, routing::get, http::StatusCode};
+use rand::Rng;
 use regex::Regex;
 use serde::{Deserialize, __private::ser::FlatMapSerializeStruct};
 use sqlx::{pool, PgPool, postgres::PgAdvisoryLockKey};
 use bcrypt::{hash, DEFAULT_COST,};
-use rand::Rng;
-use std::time::Duration;
+
 use crate::structs::{build_user, User, get_timestamp};
 
 pub fn router() -> Router {
@@ -34,14 +34,22 @@ pub async fn create_user(
     //parse into temporary struct
     let SignupUser {username,email,password} = request;
 
-    //verify validity of password, username etc 
+    //verify validity of password, username etc
+
+        //check characters used 
     let regex: Regex = Regex::new(r"^[0-9A-Za-z_]+$").unwrap();
-    if regex.is_match(&password) {
-        println!("password: {password}, is a vaild password (check by regex)");
+    if regex.is_match(&username) {
+        println!("password: {username}, is a vaild username (check by regex)");
     } else {
-        print!("password: {password}, is not a valid password (regex)"); //never prints even when 401 is returned???
-        return StatusCode::UNAUTHORIZED;
+        println!("password: {username}, is not a valid username (regex)"); //never prints even when 401 is returned???
+        return StatusCode::BAD_REQUEST;
     }
+
+        //check length
+        if password.len() <= 7 {
+            println!("username valid");
+            return StatusCode::BAD_REQUEST;
+        }
 
     //hash the password so no plain text storage (im not the government)
     let hashpass: String = hash(&password, DEFAULT_COST).unwrap();
@@ -83,41 +91,17 @@ pub async fn create_user(
 }
 
 pub async fn check_user_exists(username: &String, pool: &PgPool) -> bool {
-    // let query_res = sqlx::query(
-    //     "SELECT id, epoch_signup_time FROM users WHERE username = $1"
-    // )
-    // .bind(&username)
-    // .fetch_optional(pool)
-    // .await;
-
-    let res = sqlx::query_as::<_, User>(
-        "SELECT * FROM users WHERE username = $1"
+    let query_res = sqlx::query(
+        "SELECT id, epoch_signup_time FROM users WHERE username = $1"
     )
     .bind(&username)
-    .fetch_one(pool)
-    .await;
+    .fetch_optional(pool);
 
-    if res.is_err() {
-        return false;
-    }
-    let user: User = res.unwrap(); 
+    // if query_res { //
+    //     println!("user with the same username already exists");
+    //     return true;
+    // }
 
-    // let resp = sqlx::query_as!(User,
-    // "
-    // SELECT id, epoch_signup_time
-    // FROM users
-    // WHERE username = ?
-    // ",
-    // organization
-    // )
-    // .fetch_all(&pool)
-    // .await?;
-
-    println!("response: {:?}", user);
-    println!("{}", user.id);
-    
-    // println!("{:?}", query_res);
-    
         // TB WORKED ON ----!_!_!_!_!_!_!_
 
     return true;

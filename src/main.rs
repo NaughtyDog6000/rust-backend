@@ -79,8 +79,8 @@ async fn main() -> Result<(), Box<dyn Error>>{
         .max_connections(5)
         .connect(&dbconstring)
         .await
-        .expect("unable to connect to the Database :(");
-
+        .expect("unable to connect to the Database :(")
+        ;
 
     // -- End Of Config --
 
@@ -103,6 +103,10 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::signin::router())
     .merge(models::test_token::router())
     .merge(models::leaderboard::router())
+    .merge(models::upload_score::router())
+    .merge(models::user_account_info::router())
+    .merge(models::signout::router())
+
     .layer(cors)
     .layer(Extension(pool))
     .layer(Extension(key));
@@ -120,4 +124,3 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     Ok(())
 }
-
