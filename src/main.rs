@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
         // debug!("debug info");
         // info!("relevant general info");
         // warn!("this may be bad, you should take a look");
-        // error!("guys you whould come take a look, something bads just happened");
+        // error!("guys you whould come take a look, something *Really* bads just happened");
     
     
     let args: Vec<String> = std::env::args().collect();

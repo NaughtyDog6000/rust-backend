@@ -18,7 +18,7 @@ pub fn router() -> Router {
 
 #[derive(Serialize, Deserialize)]
 pub struct JWTRequestParams {
-    token: String
+    pub token: String
 }
 
 
