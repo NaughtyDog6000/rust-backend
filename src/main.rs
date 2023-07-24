@@ -106,6 +106,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::upload_score::router())
     .merge(models::user_account_info::router())
     .merge(models::signout::router())
+    .merge(models::add_date_of_birth::router())
 
     .layer(cors)
     .layer(Extension(pool))

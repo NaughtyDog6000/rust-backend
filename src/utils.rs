@@ -57,7 +57,7 @@ pub fn create_jwt(key:HS256Key, user: User, expires_seconds: u64) -> String {
     return token;
 }
 
-pub async fn check_token(Extension(pool): Extension<PgPool>, key:HS256Key, token: String) -> Result<User, String> {
+pub async fn check_token(pool: sqlx::Pool<sqlx::Postgres> , key:HS256Key, token: String) -> Result<User, String> {
     
     // check that it is a regularly non-expired & valid token
     let mut claims = key.verify_token::<JTWCustomClaims>(&token, Default::default());
