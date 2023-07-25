@@ -1,12 +1,13 @@
+use std::arch::x86_64::_XCR_XFEATURE_ENABLED_MASK;
+
 use axum::{Extension, Json, Router, routing::get, http::StatusCode, response::{IntoResponse, Response}};
-use jwt_simple::prelude::HS256Key;
-use jwt_simple::prelude::*;
 use log::{warn, info};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqlx::{pool, PgPool};
 
-use crate::structs::JTWCustomClaims;
+use crate::{utils::check_token, structs::User};
+
 
 
 
@@ -17,30 +18,23 @@ pub fn router() -> Router {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct JWTRequestParams {
+pub struct TokenRequestParams {
     pub token: String
 }
 
 
 pub async fn test_token(
-    Extension(key): Extension<HS256Key>,
     Extension(pool): Extension<PgPool>,
-    Json(request): Json<JWTRequestParams>
+    Json(request): Json<TokenRequestParams>
 ) -> (StatusCode, Json<Value>) {
 
-
-    let claims = key.verify_token::<JTWCustomClaims>(&request.token, Default::default());
-    match &claims {
-        Ok(claims) => {
-            info!("successful token use");
-            println!("claims: {}", claims.custom.username);
-        }
-        Err(error) => {
-            warn!("bad token use attempted");
-            return (StatusCode::BAD_REQUEST, Json(json!("bad token")))
-        }
+    let result = check_token(&pool, request.token).await;
+    if result.is_err()
+    {
+        return (StatusCode::BAD_REQUEST, Json(json!("bad token")));
     }
-    let claims = claims.unwrap();
+    let user = result.unwrap();
+    info!("user: {}\ntested a token", user.username);
 
-    (StatusCode::OK, Json(json!(claims.custom.username)))
+    (StatusCode::OK, Json(json!(user.username)))
 }

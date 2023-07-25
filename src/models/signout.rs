@@ -11,7 +11,6 @@ use axum::{
     extract::Query
 };
 
-use jwt_simple::prelude::HS256Key;
 use log::{warn, info, trace, error};
 use serde::Deserialize;
 use sqlx::{pool, PgPool};
@@ -19,23 +18,26 @@ use serde_json::{json, Value};
 
 use crate::{structs::get_timestamp, utils::{get_user, check_token}};
 
-use super::test_token::JWTRequestParams;
+use super::leaderboard::LeaderboardQueryStringParams;
+
 
 
 
 pub fn router() -> Router {
-    Router::new().route("/signout_all",
-        get(|| async {"this is not done"})
-        .post(signout_all)
-    )
+    Router::new()
+    .route("/signout_all", get(|| async {"this is not done"}).post(signout_all))
+    .route("/signout", get(|| async {"This route is incomplete"}).post(signout))
+        
+    
+
+    
 }
 
 pub async fn signout_all(
-    Extension(key): Extension<HS256Key>,
     Extension(pool): Extension<PgPool>,
-    Json(request): Json<JWTRequestParams>
+    Json(request): Json<token>
 ) -> (StatusCode, Json<Value>) {
-    let user = check_token(pool.clone(), key, request.token).await;
+    let user = check_token(&pool, ).await;
     match user {
        Ok(_) => {}
        Err(_) => { return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!("an error occured in finding the user associated with the token")));}
@@ -52,4 +54,13 @@ pub async fn signout_all(
 
 
     (StatusCode::OK, Json(json!("signed out/invalidated all current tokens associated with your account")))
+}
+
+pub async fn signout(
+    Extension(pool): Extension<PgPool>,
+    Json(request): Json<QueryParams>
+) -> (StatusCode, Json<Value>) {
+
+return (StatusCode::OK, Json(json!("signout successful")));
+
 }

@@ -8,7 +8,7 @@ use bcrypt::{verify, hash, DEFAULT_COST};
 use rand::Rng;
 use std::time::Duration;
 
-use crate::{utils::{get_user, create_jwt}, structs::User};
+use crate::{utils::{get_user, create_token}, structs::User};
 
 
 #[derive(Deserialize)]
@@ -36,7 +36,7 @@ pub async fn signin (
     let SigninRequestParams {username, email, password} = request;
     
     //find the user account with the username
-    let user: User = match get_user(Extension(pool),None, Some(username)).await {
+    let user: User = match get_user(&pool, None, Some(username)).await {
         Ok(user) => user,
         Err(error) => {
             
@@ -65,7 +65,7 @@ pub async fn signin (
     match pass_correct {
         true => {
             return (StatusCode::OK, Json(json!({
-                "token": create_jwt(key, user, 600)
+                "token": create_token(&pool, user, None).await.unwrap()
             })));
         }
         false => {}

@@ -15,14 +15,14 @@ use serde_json::{json, Value};
 use crate::structs::Score;
 
 #[derive(Deserialize)]
-pub struct QueryParams {
+pub struct LeaderboardQueryStringParams {
     length: usize,
     offset: usize,
 }
 
 
 // as u can guess it is the default value should it be undefined
-impl Default for QueryParams {
+impl Default for LeaderboardQueryStringParams {
     fn default() -> Self {
         Self { length: 10, offset: 0}
     }
@@ -38,7 +38,7 @@ pub fn router() -> Router {
 pub async fn leaderboard(    
     Extension(key): Extension<HS256Key>,
     Extension(pool): Extension<PgPool>,
-    query_params: Option<Query<QueryParams>>,
+    query_params: Option<Query<LeaderboardQueryStringParams>>,
 ) -> (StatusCode, Json<Value>) {
 
     // -- GET THE QUERY PARAMETERS --

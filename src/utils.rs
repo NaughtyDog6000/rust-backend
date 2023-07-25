@@ -1,17 +1,17 @@
 use std::string;
+use rand::{distributions::Alphanumeric, Rng};
 
-use crate::structs::{build_user, User, get_timestamp, JTWCustomClaims};
+use crate::structs::{build_user, User, get_timestamp, Token};
 use log::{warn, info, error};
 use serde_json::json;
 use sqlx::{pool, PgPool, database::HasValueRef, Error,};
-use axum::{Extension, Json, http::StatusCode};
-use jwt_simple::prelude::*;
+use axum::{Extension, Json, http::StatusCode, headers::Expires};
 
 
 
 //gets the user from the database when given one of the unuique identifiers (prefering id)
 pub async fn get_user(
-    Extension(pool): Extension<PgPool>,
+    pool: &PgPool,
     id: Option<i64>,
     username: Option<String>
     ) -> Result<User, String> {
@@ -23,13 +23,13 @@ pub async fn get_user(
             "SELECT * FROM users WHERE id = $1"
         )
         .bind(&id.unwrap())
-        .fetch_one(&pool).await;
+        .fetch_one(pool).await;
     } else {
         res = sqlx::query_as::<_, User>(
             "SELECT * FROM users WHERE username = $1"
         )
         .bind(&username.unwrap())
-        .fetch_one(&pool).await;
+        .fetch_one(pool).await;
     }
 
 
@@ -42,48 +42,66 @@ pub async fn get_user(
     return Ok(user); 
 }
 
-pub fn create_jwt(key:HS256Key, user: User, expires_seconds: u64) -> String {
+pub async fn create_token(
+    pool: &PgPool,
+    user: User,
+    expires_hours: Option<i32>
+    ) -> Result<String, String> {
 
-    let custom_claims = JTWCustomClaims {
-        id: user.id,
-        username: user.username,
-        creation_time: get_timestamp(),
-    };
-    let claims = Claims::with_custom_claims(custom_claims, Duration::from_secs(expires_seconds));
-    // let claims = Claims::create(Duration::from_secs(expires_seconds));
-    let token: String = key.authenticate(claims).expect("could not authenticate/generate a JWT");
+    const LENGTH: usize = 30; //length of the token 
+
+    // if the expiry time is not defined set it to 1 day
+    if expires_hours.is_none()
+    {
+        let expires_hours: i32 = 24;
+    }
+
+    // generate random token
+    let token: String = rand::thread_rng()
+    .sample_iter(&Alphanumeric)
+    .take(LENGTH)
+    .map(char::from)
+    .collect();
+
+    // check that the token doesnt already exist (there is like no chance of this even happening)
+    let response = sqlx::query("SELECT * FROM tokens
+                WHERE token = $1").bind(&token).execute(pool).await;
+
+    if response.is_err() 
+    {
+        return Err(String::from("token generation failed (the chances of this happening is 1 in 34^30 (8 Quattuordecillion) or i fucked up)"));
+    }
+
+    let insrt_rsp = sqlx::query("INSERT INTO tokens (user_id, epoch_expriry_date)
+                VALUES ($1,$2);
+    ")
+    .bind(user.id)
+    .bind(expires_hours)
+    .execute(pool);
 
 
-    return token;
+    return Ok(token);
 }
 
-pub async fn check_token(pool: sqlx::Pool<sqlx::Postgres> , key:HS256Key, token: String) -> Result<User, String> {
+pub async fn check_token(pool: &PgPool, token: String) -> Result<User, String> {
     
     // check that it is a regularly non-expired & valid token
-    let mut claims = key.verify_token::<JTWCustomClaims>(&token, Default::default());
-    match &claims {
-        Err(error) => {
-            warn!("bad token use attempted");
-            return Err(String::from("token invalid"));
-        }
-        _ => { }
+    let response = sqlx::query_as::<_, Token>("SELECT * FROM tokens
+                                WHERE token = $1 AND epoch_expiry_date > $2; 
+    ")
+    .bind(token)
+    .bind(get_timestamp())
+    .fetch_one(pool)
+    .await;
+
+    if response.is_err()
+    {
+        error!("token check failed");
+        return Err(String::from("token check failed"));
     }
+    let token = response.unwrap();
 
-    // check that the user hasnt signed out (invalidated all tokens) after this was created
-    error!("invalidating tokens not complete");
-
-    let claims = claims.unwrap();
-
-    let mut expire_before = sqlx::query("SELECT epoch_invalidate_tokens FROM users WHERE id = $1;").bind(&claims.custom.id).execute(&pool).await;
-    match expire_before {
-        Ok(_) => {}
-        Err(_) => { error!("checking user token expire before date");  return  Err(String::from("select fail")); }
-    }
-
-    let expire_before = expire_before.unwrap();
-    println!("{:?}", expire_before);
-
-    return get_user(Extension(pool), Some(claims.custom.id), None).await;
+    return get_user(pool, Some(token.id), None).await;
 
     // return Err(String::from("error occured in token check"));
 }
@@ -91,7 +109,7 @@ pub async fn check_token(pool: sqlx::Pool<sqlx::Postgres> , key:HS256Key, token:
 
 
 pub fn get_scores_default(
-    Extension(pool): Extension<PgPool>,
+    pool: PgPool,
 ) -> Result<User, String>  {
     
 

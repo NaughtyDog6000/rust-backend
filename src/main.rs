@@ -6,7 +6,6 @@ mod structs;
 mod utils;
 
 use std::{fs::{*, self}, net::SocketAddr, io::Write, path::Path};
-use jwt_simple::prelude::HS256Key;
 use tower_http::cors::{Any, CorsLayer};
 use sqlx::{postgres::PgPoolOptions, error::BoxDynError};
 
