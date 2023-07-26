@@ -43,35 +43,6 @@ async fn main() -> Result<(), Box<dyn Error>>{
     // println!("connection string: {}", dbconstring);
 
 
-    //create a key
-    if Path::new("key.txt").exists() == false {
-        warn!("new key being generated");
-
-        let mut file = File::create("key.txt")?;
-        let key = HS256Key::generate();
-        println!("KEY FROM GENERATION: {:?}", key);
-
-
-        file.write_all(&key.to_bytes());
-    }
-
-    //read key from file
-    let key: HS256Key;
-    {
-        info!("reading key");
-
-        let mut file = fs::read("key.txt");
-        key = HS256Key::from_bytes(&file.unwrap());
-
-    }
-
-    println!("KEY FROM FILE: {:?}", key);
-
-
-
-
-
-
     let cors = CorsLayer::new().allow_origin(Any);
 
     let pool = PgPoolOptions::new()
@@ -108,8 +79,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::add_date_of_birth::router())
 
     .layer(cors)
-    .layer(Extension(pool))
-    .layer(Extension(key));
+    .layer(Extension(pool));
 
     // -- create  server on socket/address 
 

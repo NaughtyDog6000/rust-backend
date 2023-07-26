@@ -8,14 +8,12 @@ use axum::{
     extract::Query
 };
 
-use jwt_simple::prelude::*;
 use log::{warn, info, trace, error};
 use serde::Deserialize;
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::structs::{Score, get_timestamp};
-use crate::structs::JTWCustomClaims;
+use crate::{structs::{Score, get_timestamp, User}, utils::check_token};
 
 #[derive(Deserialize)]
 pub struct UploadScoreRequestParams {
@@ -34,7 +32,6 @@ pub fn router() -> Router {
 }
 
 pub async fn leaderboard(    
-    Extension(key): Extension<HS256Key>,
     Extension(pool): Extension<PgPool>,
     Json(request): Json<UploadScoreRequestParams>,
 ) -> (StatusCode, Json<Value>) {
@@ -48,16 +45,15 @@ pub async fn leaderboard(
 
     let token_valid: bool = true;
 
-    let username: String;
-    let user_id: i64;
+    let user: User;
 
     // -- extract user_id from token --
-    let claims = key.verify_token::<JTWCustomClaims>(&request.token, Default::default());
-    match &claims {
-        Ok(claims) => {
-            username = claims.custom.username.clone();
-            user_id = claims.custom.id.clone();
-            info!("Signin of: {}, id: {}", &username, &user_id);
+    let result = check_token(&pool, request.token).await;
+    match result {
+        Ok(result) => {
+
+            user = result;
+            info!("Signin of: {}, id: {}",user.username, user.id);
 
         }
         Err(error) => {
@@ -76,15 +72,15 @@ pub async fn leaderboard(
         "SELECT * FROM scores
         WHERE user_id = $1 AND epoch_game_start_time = $2;" //select one where user id & start time matches
     )
-    .bind(&user_id)
+    .bind(user.id)
     .bind(request.epoch_game_start_time)
     .fetch_one(&pool).await;
 
     // if it already exists return an error (already uploaded).
     if res.is_ok() {
         info!("response: {:?}", &res.unwrap());
-        return (StatusCode::INTERNAL_SERVER_ERROR, 
-            Json(json!("an internal error occured? ocured? occurd? while checking if this record already exists")));
+        return (StatusCode::ALREADY_REPORTED, 
+            Json(json!("this score has already been uploaded")));
     }
     
     // if  { return (StatusCode::ALREADY_REPORTED, Json(json!("this game was already uploaded"))); },
@@ -96,7 +92,7 @@ pub async fn leaderboard(
     let resp = sqlx::query("INSERT INTO scores (user_id, score, game_mode, epoch_upload_time, epoch_game_start_time, epoch_game_end_time)
                 VALUES ($1, $2, $3, $4, $5, $6)
     ")
-    .bind(user_id)
+    .bind(user.id)
     .bind(request.score)
     .bind(request.gamemode)
     .bind(get_timestamp())

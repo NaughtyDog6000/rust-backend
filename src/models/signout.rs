@@ -18,7 +18,7 @@ use serde_json::{json, Value};
 
 use crate::{structs::get_timestamp, utils::{get_user, check_token}};
 
-use super::leaderboard::LeaderboardQueryStringParams;
+use super::{leaderboard::LeaderboardQueryStringParams, test_token::TokenRequestParams};
 
 
 
@@ -35,9 +35,9 @@ pub fn router() -> Router {
 
 pub async fn signout_all(
     Extension(pool): Extension<PgPool>,
-    Json(request): Json<token>
+    Json(request): Json<TokenRequestParams>
 ) -> (StatusCode, Json<Value>) {
-    let user = check_token(&pool, ).await;
+    let user = check_token(&pool, request.token).await;
     match user {
        Ok(_) => {}
        Err(_) => { return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!("an error occured in finding the user associated with the token")));}
@@ -58,9 +58,10 @@ pub async fn signout_all(
 
 pub async fn signout(
     Extension(pool): Extension<PgPool>,
-    Json(request): Json<QueryParams>
+    Json(request): Json<TokenRequestParams>
 ) -> (StatusCode, Json<Value>) {
 
-return (StatusCode::OK, Json(json!("signout successful")));
 
+    warn!("singout not currently working");
+    return (StatusCode::OK, Json(json!("signout successful")));
 }

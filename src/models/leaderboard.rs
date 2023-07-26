@@ -6,7 +6,6 @@ use axum::{
     extract::Query
 };
 
-use jwt_simple::prelude::HS256Key;
 use log::{warn, info, trace, error};
 use serde::Deserialize;
 use sqlx::{pool, PgPool};
@@ -36,7 +35,6 @@ pub fn router() -> Router {
 }
 
 pub async fn leaderboard(    
-    Extension(key): Extension<HS256Key>,
     Extension(pool): Extension<PgPool>,
     query_params: Option<Query<LeaderboardQueryStringParams>>,
 ) -> (StatusCode, Json<Value>) {
