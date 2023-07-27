@@ -29,10 +29,19 @@ pub struct Token {
     pub id: i64,
     pub user_id: i64,
     pub epoch_expiry_date: i64,
+    pub token: String,
     pub creation_timestamp: PrimitiveDateTime,
 }
 
 // -- END OF TABLES --
+
+// -- REQUEST PARAMS --
+#[derive(Serialize, Deserialize)]
+pub struct TokenRequestParams {
+    pub token: String
+}
+
+
 
 
 pub fn build_user(

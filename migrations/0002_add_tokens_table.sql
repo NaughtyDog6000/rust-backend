@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS tokens
 (
     id BIGSERIAL NOT NULL,
     user_id bigint NOT NULL,
-    epoch_expiry_date bigint NOT NULL ,
+    epoch_expiry_date bigint NOT NULL,
+    token VARCHAR(255) NOT NULL,
     creation_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT tokens_pkey PRIMARY KEY (id),
     CONSTRAINT user_id FOREIGN KEY (user_id) REFERENCES public.users (id) 

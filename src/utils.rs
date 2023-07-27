@@ -13,7 +13,8 @@ use axum::{Extension, Json, http::StatusCode, headers::Expires};
 pub async fn get_user(
     pool: &PgPool,
     id: Option<i64>,
-    username: Option<String>
+    username: Option<String>,
+    token: Option<String>
     ) -> Result<User, String> {
 
     let res: Result<User, sqlx::Error>;
@@ -24,38 +25,67 @@ pub async fn get_user(
         )
         .bind(&id.unwrap())
         .fetch_one(pool).await;
-    } else {
+
+    } else if token.is_some() {
+        let token_req = sqlx::query_as::<_,Token>("SELECT * FROM tokens
+                                WHERE token = $1; 
+        ")
+        .bind(token.unwrap())
+        .fetch_one(pool).await;
+
+        
+        
+        if token_req.is_err() { return Err(String::from("Token could not be found in database or database encountered an error")); }
+        let token_struct: Token  = token_req.unwrap();
+
+        res = sqlx::query_as::<_,User>("SELECT * FROM users WHERE id = $1"
+        )
+        .bind(token_struct.user_id)
+        .fetch_one(pool).await;
+
+    } else if username.is_some() {
         res = sqlx::query_as::<_, User>(
             "SELECT * FROM users WHERE username = $1"
         )
         .bind(&username.unwrap())
         .fetch_one(pool).await;
+    
+    } else {
+        return Err(String::from("nothing provided to get_user (all params are none)"));
     }
 
 
 
 
     if res.is_err() {
+        println!("{:?}", res);
         return Err(String::from("Failed to fetch user"));
     }
+
     let user: User = res.unwrap();
     return Ok(user); 
 }
 
-pub async fn create_token(
+pub async fn create_session_token(
     pool: &PgPool,
     user: User,
     expires_hours: Option<i32>
     ) -> Result<String, String> {
 
     const LENGTH: usize = 30; //length of the token 
+    const SECONDS_IN_DAY: i64 = 86400;
+    let epoch_expiry_timestamp: i64;
+
 
     // if the expiry time is not defined set it to 1 day
     if expires_hours.is_none()
     {
-        let expires_hours: i32 = 24;
+        epoch_expiry_timestamp = get_timestamp() + SECONDS_IN_DAY;
+    } else {
+        epoch_expiry_timestamp = get_timestamp() + (expires_hours.unwrap() as i64 * 3600);
     }
 
+    
     // generate random token
     let token: String = rand::thread_rng()
     .sample_iter(&Alphanumeric)
@@ -72,18 +102,23 @@ pub async fn create_token(
         return Err(String::from("token generation failed (the chances of this happening is 1 in 34^30 (8 Quattuordecillion) or i fucked up)"));
     }
 
-    let insrt_rsp = sqlx::query("INSERT INTO tokens (user_id, epoch_expriry_date)
-                VALUES ($1,$2);
+    let insrt_rsp = sqlx::query("INSERT INTO tokens (user_id, epoch_expiry_date, token)
+                VALUES ($1,$2,$3);
     ")
     .bind(user.id)
-    .bind(expires_hours)
-    .execute(pool);
+    .bind(epoch_expiry_timestamp)
+    .bind(&token)
+    .execute(pool).await;
+
+
+    info!("{:?}", insrt_rsp);
+    if insrt_rsp.is_err() { return Err(String::from("token database insert failure")); }
 
 
     return Ok(token);
 }
 
-pub async fn check_token(pool: &PgPool, token: String) -> Result<User, String> {
+pub async fn check_token(pool: &PgPool, token: String) -> bool {
     
     // check that it is a regularly non-expired & valid token
     let response = sqlx::query_as::<_, Token>("SELECT * FROM tokens
@@ -97,23 +132,13 @@ pub async fn check_token(pool: &PgPool, token: String) -> Result<User, String> {
     if response.is_err()
     {
         error!("token check failed");
-        return Err(String::from("token check failed"));
+        return false
     }
     let token = response.unwrap();
+    println!("{:?}", token);
 
-    return get_user(pool, Some(token.id), None).await;
+    return true
 
     // return Err(String::from("error occured in token check"));
 }
 
-
-
-pub fn get_scores_default(
-    pool: PgPool,
-) -> Result<User, String>  {
-    
-
-
-    warn!("THIS FUNCTION IS INCOMPLETE");
-    Err(String::from("INCOMPLETE FUNCTION"))
-}

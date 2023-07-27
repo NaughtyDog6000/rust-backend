@@ -13,7 +13,7 @@ use serde::Deserialize;
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::{structs::{Score, get_timestamp, User}, utils::check_token};
+use crate::{structs::{Score, get_timestamp, User}, utils::{check_token, get_user}};
 
 #[derive(Deserialize)]
 pub struct UploadScoreRequestParams {
@@ -48,19 +48,12 @@ pub async fn leaderboard(
     let user: User;
 
     // -- extract user_id from token --
-    let result = check_token(&pool, request.token).await;
-    match result {
-        Ok(result) => {
-
-            user = result;
-            info!("Signin of: {}, id: {}",user.username, user.id);
-
-        }
-        Err(error) => {
-            warn!("bad token use attempted");
-            return (StatusCode::BAD_REQUEST, Json(json!("bad token")))
-        }
+    let result: Result<User, String> = get_user(&pool, None, None, Some(request.token)).await;
+    if result.is_err() {
+        warn!("bad token use attempted");
+        return (StatusCode::BAD_REQUEST, Json(json!("bad token")))
     }
+    let user: User = result.unwrap();
     // -- apply limitations (request spam & invalid scores check) -- 
     
     warn!("limitations for spam and score validation checks not complete");

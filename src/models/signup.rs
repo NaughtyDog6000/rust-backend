@@ -5,6 +5,7 @@ use log::{warn, error, info};
 use rand::Rng;
 use regex::Regex;
 use serde::Deserialize;
+use serde_json::{json, Value};
 use sqlx::{pool, PgPool, postgres::PgAdvisoryLockKey};
 use bcrypt::{hash, DEFAULT_COST,};
 
@@ -31,7 +32,7 @@ pub async fn create_user(
     Extension(pool): Extension<PgPool>,
     Json(request): Json<SignupUser>
 
-) -> StatusCode {
+) -> (StatusCode, Json<Value>) {
     //parse into temporary struct
     let SignupUser {username,email,password} = request;
 
@@ -43,13 +44,13 @@ pub async fn create_user(
         warn!("password: {username}, is a vaild username (check by regex)");
     } else {
         warn!("password: {username}, is not a valid username (regex)"); //never prints even when 401 is returned???
-        return StatusCode::BAD_REQUEST;
+        return (StatusCode::BAD_REQUEST, Json(json!("invalid username (un-allowed characters)")));
     }
 
         //check length
         if password.len() <= 7 {
             println!("username valid");
-            return StatusCode::BAD_REQUEST;
+            return (StatusCode::BAD_REQUEST, Json(json!("password too short")));
         }
 
     //hash the password so no plain text storage (im not the government)
@@ -61,7 +62,7 @@ pub async fn create_user(
     match exists {
         true => {
             println!("user with username already exists, canceling creation");
-            return StatusCode::BAD_REQUEST
+            return (StatusCode::BAD_REQUEST, Json(json!("username already exists :'( try another")))
         }
         _ => println!("user with that name doesn't exist, finishing creation"),
     }
@@ -89,7 +90,7 @@ pub async fn create_user(
     tokio::time::sleep(sleepy_time).await;
 
     //return success code 200
-    StatusCode::OK
+    (StatusCode::OK, Json(json!("Signup successful!")))
 }
 
 pub async fn check_user_exists(username: &String, pool: &PgPool) -> bool {

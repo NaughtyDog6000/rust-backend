@@ -17,7 +17,7 @@ use serde::Deserialize;
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::{utils::check_token, structs::User};
+use crate::{utils::{check_token, get_user}, structs::User};
 
 
 pub fn router() -> Router {
@@ -41,7 +41,7 @@ pub async fn add_date_of_birth(
 ) -> (StatusCode, Json<Value>) {
     
     // -- check the toekn --
-    let user = check_token(&pool, request.token).await;
+    let user = get_user(&pool, None, None, Some(request.token)).await;
     if user.is_err() 
     {
         return (StatusCode::BAD_REQUEST, Json(json!("invalid token")));

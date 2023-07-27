@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqlx::{pool, PgPool};
 
-use crate::{utils::check_token, structs::User};
+use crate::{utils::{check_token, get_user}, structs::{User, TokenRequestParams}};
 
 
 
@@ -17,10 +17,7 @@ pub fn router() -> Router {
     )
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct TokenRequestParams {
-    pub token: String
-}
+
 
 
 pub async fn test_token(
@@ -28,7 +25,7 @@ pub async fn test_token(
     Json(request): Json<TokenRequestParams>
 ) -> (StatusCode, Json<Value>) {
 
-    let result = check_token(&pool, request.token).await;
+    let result = get_user(&pool, None, None, Some(request.token)).await;
     if result.is_err()
     {
         return (StatusCode::BAD_REQUEST, Json(json!("bad token")));
