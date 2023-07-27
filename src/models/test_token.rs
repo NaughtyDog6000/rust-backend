@@ -28,7 +28,7 @@ pub async fn test_token(
     let result = get_user(&pool, None, None, Some(request.token)).await;
     if result.is_err()
     {
-        return (StatusCode::BAD_REQUEST, Json(json!("bad token")));
+        return (StatusCode::BAD_REQUEST, Json(json!({"ERROR" : "bad token"})));
     }
     let user = result.unwrap();
     info!("user: {}\ntested a token", user.username);

@@ -39,7 +39,7 @@ pub async fn create_user(
     //verify validity of password, username etc
 
         //check characters used 
-    let regex: Regex = Regex::new(r"^[0-9A-Za-z_]+$").unwrap();
+    let regex: Regex = Regex::new(r"^[0-9A-Za-z_.]+$").unwrap();
     if regex.is_match(&username) {
         warn!("password: {username}, is a vaild username (check by regex)");
     } else {
@@ -86,8 +86,8 @@ pub async fn create_user(
    
     // should add a random delay so that you cannot do some funky stuff to see if a user exists
     // or password funky stuff
-    let sleepy_time = rand::thread_rng().gen_range(Duration::from_millis(100)..=Duration::from_millis(500));
-    tokio::time::sleep(sleepy_time).await;
+    // let sleepy_time = rand::thread_rng().gen_range(Duration::from_millis(100)..=Duration::from_millis(500));
+    // tokio::time::sleep(sleepy_time).await;
 
     //return success code 200
     (StatusCode::OK, Json(json!("Signup successful!")))

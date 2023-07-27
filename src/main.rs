@@ -68,7 +68,6 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     let app = Router::new()
     .route("/", get(|| async { Html("Hello <b>World!!</b>") } ))
-    // .route("/signup", post(models::signup::create_user()))
     .merge(models::signup::router())
     .merge(models::signin::router())
     .merge(models::test_token::router())

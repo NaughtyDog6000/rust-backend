@@ -58,8 +58,8 @@ pub async fn signin (
     let token = token.unwrap();
     //add a random delay (even though the chance of anyyone (even alex) abusing the timings to know shit is like 1*10^-69%)
     
-    let sleepy_time = rand::thread_rng().gen_range(Duration::from_millis(100)..=Duration::from_millis(500));
-    tokio::time::sleep(sleepy_time).await;
+    // let sleepy_time = rand::thread_rng().gen_range(Duration::from_millis(100)..=Duration::from_millis(500));
+    // tokio::time::sleep(sleepy_time).await;
     
 
 
