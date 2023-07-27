@@ -8,7 +8,6 @@ use axum::{
     extract::Query
 };
 
-use jwt_simple::prelude::HS256Key;
 use log::{warn, info, trace, error};
 use serde::Deserialize;
 use sqlx::{pool, PgPool};

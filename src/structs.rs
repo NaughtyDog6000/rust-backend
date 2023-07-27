@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
+use sqlx::types::time::PrimitiveDateTime;
 // -- TABLES --
 
 #[derive(Deserialize, sqlx::FromRow, Debug)]
@@ -23,14 +23,25 @@ pub struct Score {
     pub game_mode: String,
 }
 
+#[derive(sqlx::FromRow, Debug)]
+
+pub struct Token {
+    pub id: i64,
+    pub user_id: i64,
+    pub epoch_expiry_date: i64,
+    pub token: String,
+    pub creation_timestamp: PrimitiveDateTime,
+}
+
 // -- END OF TABLES --
 
-#[derive(Deserialize, Serialize)]
-pub struct JTWCustomClaims {
-    pub id: i64,
-    pub username: String,
-    pub creation_time: i64,
+// -- REQUEST PARAMS --
+#[derive(Serialize, Deserialize)]
+pub struct TokenRequestParams {
+    pub token: String
 }
+
+
 
 
 pub fn build_user(
