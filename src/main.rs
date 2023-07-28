@@ -6,6 +6,7 @@ mod structs;
 mod utils;
 
 use std::{fs::{*, self}, net::{SocketAddr, IpAddr, Ipv4Addr}, io::Write, path::Path};
+use serde_json::json;
 use tower_http::cors::{Any, CorsLayer};
 use sqlx::{postgres::PgPoolOptions, error::BoxDynError};
 
@@ -13,7 +14,7 @@ use axum::{
     extract::Extension,
     Router,
     routing::{get, post},
-    response::Html,
+    response::Html, Json,
 };
 
 use dotenv;
@@ -79,7 +80,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
 
     let app = Router::new()
-    .route("/", get(|| async { Html("Hello <b>World!!</b>") } ))
+    .route("/", get(|| async { Html("Hello <b>GET!!</b>") } ).post(|| async { Html("Hello <b>POST!!</b>") } ))
     .merge(models::signup::router())
     .merge(models::signin::router())
     .merge(models::test_token::router())
