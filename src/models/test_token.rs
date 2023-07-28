@@ -1,5 +1,3 @@
-use std::arch::x86_64::_XCR_XFEATURE_ENABLED_MASK;
-
 use axum::{Extension, Json, Router, routing::get, http::StatusCode, response::{IntoResponse, Response}};
 use log::{warn, info};
 use serde::{Deserialize, Serialize};

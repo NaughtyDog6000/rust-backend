@@ -72,7 +72,7 @@ pub async fn signout(
         warn!("signout attempt of a token that is either invalid or doesnt exist");
         return (StatusCode::BAD_REQUEST, 
             Json(json!({
-                 "response": "this token doesnt exist or is already invalid"
+                 "response": "this token doesn't exist or is already invalid"
                  }))
         );
 
@@ -93,7 +93,7 @@ pub async fn signout(
 
 
     (StatusCode::OK, Json(json!({
-        "signout": "success",
+        "response": "success",
         "number": rows_affected
     })))
 }
