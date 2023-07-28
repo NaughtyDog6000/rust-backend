@@ -38,7 +38,11 @@ pub async fn signin (
         Ok(user) => user,
         Err(error) => {
             
-            return (StatusCode::BAD_REQUEST, Json(json!("user does not exist")));
+            return (StatusCode::BAD_REQUEST, 
+                Json(json!({
+                     "response": "user does not exist"
+                     }))
+            );
         } 
     }; 
     

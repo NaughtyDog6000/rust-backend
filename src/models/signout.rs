@@ -47,14 +47,18 @@ pub async fn signout_all(
 
     let user = user.unwrap();
     let current_time = get_timestamp();
-    sqlx::query("DELETE FROM tokens
+    let response = sqlx::query("DELETE FROM tokens
                 WHERE user_id = $1")
                 .bind(user.id)
                 .execute(&pool)
                 .await;
 
+    let rows_affected = response.unwrap().rows_affected();
 
-    (StatusCode::OK, Json(json!("signed out/invalidated all current tokens associated with your account")))
+    (StatusCode::OK, Json(json!({
+        "signout": "success",
+        "number": rows_affected
+    })))
 }
 
 // signs out the current token
@@ -67,8 +71,10 @@ pub async fn signout(
     {
         warn!("signout attempt of a token that is either invalid or doesnt exist");
         return (StatusCode::BAD_REQUEST, 
-            Json(json!(String::from("this token doesnt exist or is already invalid")))
-        )
+            Json(json!({
+                 "response": "this token doesnt exist or is already invalid"
+                 }))
+        );
 
     }
 
@@ -85,7 +91,9 @@ pub async fn signout(
     let rows_affected = response.unwrap().rows_affected();
     trace!("rows effected: {}", &rows_affected);
 
-    let success_string: String = format!("ALL {} tokens successfully disabled", rows_affected);
 
-    return (StatusCode::OK, Json(json!(success_string)));
+    (StatusCode::OK, Json(json!({
+        "signout": "success",
+        "number": rows_affected
+    })))
 }

@@ -1,6 +1,4 @@
-//This route is for disabling all current tokens associated with the account 
-// (therefore signing out all current devices)
-
+// this route is for adding/
 use std::string;
 
 use axum::{

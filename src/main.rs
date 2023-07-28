@@ -5,7 +5,7 @@ mod models;
 mod structs;
 mod utils;
 
-use std::{fs::{*, self}, net::SocketAddr, io::Write, path::Path};
+use std::{fs::{*, self}, net::{SocketAddr, IpAddr, Ipv4Addr}, io::Write, path::Path};
 use tower_http::cors::{Any, CorsLayer};
 use sqlx::{postgres::PgPoolOptions, error::BoxDynError};
 
@@ -38,10 +38,22 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     // load environment variables from the .env file 
     dotenv::dotenv().ok();
-    let envkey = "DB";
+    let envkey = "DATABASE_URL";
+    
     let dbconstring = dotenv::var(envkey).unwrap();
-    // println!("connection string: {}", dbconstring);
+    
+    // GIANT MESS
+    let port = dotenv::var("PORT");
+    let port_str = port.unwrap();
+    let port = port_str.parse::<u16>().unwrap();
+    // println!("{:?}", port);
 
+    let addr = dotenv::var("HOST_ADDRESS").unwrap();
+    let address_parts_str: Vec<&str> =addr.split(".").collect();
+    let address_parts: Result<Vec<u8>,_> = address_parts_str.iter().map(|x| x.parse()).collect();
+    let address_parts: Vec<u8> = address_parts.unwrap();
+    // println!("{:?}", address_parts);
+    // GIANT MESS
 
     let cors = CorsLayer::new().allow_origin(Any);
 
@@ -75,14 +87,16 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::upload_score::router())
     .merge(models::user_account_info::router())
     .merge(models::signout::router())
-    .merge(models::add_date_of_birth::router())
+    .merge(models::update_date_of_birth::router())
+    .merge(models::delete_account::router())
+    .merge(models::update_password::router())
 
     .layer(cors)
     .layer(Extension(pool));
 
     // -- create  server on socket/address 
 
-    let address = SocketAddr::from(([127,0,0,1], 8080));
+    let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(address_parts[0],address_parts[1],address_parts[2],address_parts[3],)), port);
     println!("Listenting on {address}\n");
     axum::Server::bind(&address)
         .serve(app.into_make_service())

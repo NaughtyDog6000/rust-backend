@@ -62,12 +62,17 @@ pub async fn create_user(
     match exists {
         true => {
             println!("user with username already exists, canceling creation");
-            return (StatusCode::BAD_REQUEST, Json(json!("username already exists :'( try another")))
+            return (StatusCode::BAD_REQUEST, Json(json!({
+                "signup": false,
+                "details": "user with that username already exists",
+                "timestamp": get_timestamp()
+        
+            })))
         }
         _ => println!("user with that name doesn't exist, finishing creation"),
     }
 
-    
+    let timeestamp: i64 = get_timestamp();
 
     //add user to database 
     //ToDo: return the id, timestamp etc to be able to get the full user struct
@@ -78,7 +83,7 @@ pub async fn create_user(
     .bind(&username)
     .bind(&email)
     .bind(&hashpass)
-    .bind(get_timestamp())
+    .bind(&timeestamp)
     .execute(&pool).await;
 
     info!("created a user; username: {username}, email: {email}, password hash: {hashpass} ");
@@ -90,7 +95,13 @@ pub async fn create_user(
     // tokio::time::sleep(sleepy_time).await;
 
     //return success code 200
-    (StatusCode::OK, Json(json!("Signup successful!")))
+    (StatusCode::OK, Json(json!({
+        "signup": true,
+        "details": "Success",
+        "username": username,
+        "timestamp": timeestamp
+
+    })))
 }
 
 pub async fn check_user_exists(username: &String, pool: &PgPool) -> bool {
