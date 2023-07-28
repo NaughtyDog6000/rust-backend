@@ -81,6 +81,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     let app = Router::new()
     .route("/", get(|| async { Html("Hello <b>GET!!</b>") } ).post(|| async { Html("Hello <b>POST!!</b>") } ))
+    .route("/ping", get(|| async { Html("pong GET") } ).post(|| async { Html("PONG POST") } ))
     .merge(models::signup::router())
     .merge(models::signin::router())
     .merge(models::test_token::router())
