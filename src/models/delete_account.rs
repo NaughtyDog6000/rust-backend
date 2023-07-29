@@ -53,7 +53,7 @@ pub async fn delete_account(
 
     info!("DELETING USER: {}", user.username);
     // -- delete scores --
-    sqlx::query("
+   let response_scores = sqlx::query("
     DELETE FROM scores
     WHERE user_id = $1
     ")
@@ -61,7 +61,7 @@ pub async fn delete_account(
     .execute(&pool)
     .await;
     // -- delete tokens --
-    sqlx::query("
+    let response_tokens = sqlx::query("
     DELETE FROM tokens
     WHERE user_id = $1
     ")
@@ -69,7 +69,7 @@ pub async fn delete_account(
     .execute(&pool)
     .await;
     // -- delete user --
-    sqlx::query("
+    let response_users = sqlx::query("
     DELETE FROM users
     WHERE id = $1
     ")
@@ -77,6 +77,7 @@ pub async fn delete_account(
     .execute(&pool)
     .await;
 
+    println!("scores: {:?}\ntokens: {:?}\nusers: {:?}", response_scores, response_tokens, response_users);
     // -- check that user no longer exists --
 
     let user_exists: bool = check_user_exists(&user.username, &pool).await;

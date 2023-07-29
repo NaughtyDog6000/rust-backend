@@ -89,16 +89,16 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::upload_score::router())
     .merge(models::user_account_info::router())
     .merge(models::signout::router())
-    .merge(models::update_date_of_birth::router())
+    .merge(models::update_account_data::router())
     .merge(models::delete_account::router())
-    .merge(models::update_password::router())
+    .merge(models::friend_managment::router())
 
     .layer(cors)
     .layer(Extension(pool));
 
     // -- create  server on socket/address 
 
-    let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(address_parts[0],address_parts[1],address_parts[2],address_parts[3],)), port);
+    let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(address_parts[0], address_parts[1], address_parts[2], address_parts[3])), port);
     println!("Listenting on {address}\n");
     axum::Server::bind(&address)
         .serve(app.into_make_service())

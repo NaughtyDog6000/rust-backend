@@ -1,5 +1,6 @@
 use std::string;
 use rand::{distributions::Alphanumeric, Rng};
+use regex::Regex;
 
 use crate::structs::{build_user, User, get_timestamp, Token};
 use log::{warn, info, error};
@@ -142,3 +143,10 @@ pub async fn check_token(pool: &PgPool, token: String) -> bool {
     // return Err(String::from("error occured in token check"));
 }
 
+pub fn check_password_regex(
+    password: &String
+) -> bool {
+    let reg: Regex = Regex::new(r"^[0-9A-Za-z_.]+$").unwrap();
+    if reg.is_match(password) {return true;}
+    return false;
+}

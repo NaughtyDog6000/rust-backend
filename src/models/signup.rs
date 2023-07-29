@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use sqlx::{pool, PgPool, postgres::PgAdvisoryLockKey};
 use bcrypt::{hash, DEFAULT_COST,};
 
-use crate::structs::{build_user, User, get_timestamp};
+use crate::{structs::{build_user, User, get_timestamp}, utils::check_password_regex};
 
 pub fn router() -> Router {
     Router::new().route("/signup",
@@ -40,14 +40,13 @@ pub async fn create_user(
 
     //verify validity of password, username etc
 
-        //check characters used 
-    let regex: Regex = Regex::new(r"^[0-9A-Za-z_.]+$").unwrap();
+    
     
 
-    if regex.is_match(&username) {
-        warn!("password: {username}, is a vaild username (check by regex)");
+    if check_password_regex(&password) {
+        warn!("password: {password}, is a vaild username (check by regex)");
     } else {
-        warn!("password: {username}, is not a valid username (regex)"); //never prints even when 401 is returned???
+        warn!("password: {password}, is not a valid username (regex)"); //never prints even when 401 is returned???
         return (StatusCode::BAD_REQUEST, Json(json!("invalid username (un-allowed characters)")));
     }
 

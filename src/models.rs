@@ -5,6 +5,6 @@ pub mod leaderboard;
 pub mod upload_score;
 pub mod user_account_info;
 pub mod signout;
-pub mod update_date_of_birth;
+pub mod update_account_data;
 pub mod delete_account;
-pub mod update_password;
+pub mod friend_managment;
