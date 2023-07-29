@@ -1,5 +1,6 @@
 use std::{string, time::Duration};
 
+use stopwatch::Stopwatch;
 use axum::{Extension, Json, Router, routing::get, http::StatusCode, };
 use log::{warn, error, info};
 use rand::Rng;
@@ -34,12 +35,15 @@ pub async fn create_user(
 
 ) -> (StatusCode, Json<Value>) {
     //parse into temporary struct
+    // let sw = Stopwatch::start_new();
     let SignupUser {username,email,password} = request;
 
     //verify validity of password, username etc
 
         //check characters used 
     let regex: Regex = Regex::new(r"^[0-9A-Za-z_.]+$").unwrap();
+    
+
     if regex.is_match(&username) {
         warn!("password: {username}, is a vaild username (check by regex)");
     } else {
@@ -47,17 +51,27 @@ pub async fn create_user(
         return (StatusCode::BAD_REQUEST, Json(json!("invalid username (un-allowed characters)")));
     }
 
+    // println!("regex & parse took {}ms", sw.elapsed_ms());
+    
+
         //check length
         if password.len() <= 7 {
             println!("username valid");
             return (StatusCode::BAD_REQUEST, Json(json!("password too short")));
         }
 
+    // println!("length check took {}ms", sw.elapsed_ms());
+
+
     //hash the password so no plain text storage (im not the government)
-    let hashpass: String = hash(&password, DEFAULT_COST).unwrap();
+    let hashpass: String = hash(&password, 8).unwrap();
+    // println!("hash took {}ms", sw.elapsed_ms());
+    
 
     //check that a user with the email & username doesnt already exist
     let exists: bool = check_user_exists(&username, &pool).await;
+    // println!("check user exists took {}ms", sw.elapsed_ms());
+    
 
     match exists {
         true => {
@@ -73,6 +87,8 @@ pub async fn create_user(
     }
 
     let timeestamp: i64 = get_timestamp();
+    // println!("timestamp & match user exists took {}ms", sw.elapsed_ms());
+
 
     //add user to database 
     //ToDo: return the id, timestamp etc to be able to get the full user struct
@@ -85,6 +101,9 @@ pub async fn create_user(
     .bind(&hashpass)
     .bind(&timeestamp)
     .execute(&pool).await;
+
+    // println!("insert qry took {}ms", sw.elapsed_ms());
+
 
     info!("created a user; username: {username}, email: {email}, password hash: {hashpass} ");
 
