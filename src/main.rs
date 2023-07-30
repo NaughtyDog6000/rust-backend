@@ -6,7 +6,7 @@ mod structs;
 mod utils;
 
 use std::{fs::{*, self}, net::{SocketAddr, IpAddr, Ipv4Addr}, io::Write, path::Path};
-use serde_json::json;
+use serde_json::{json, Value};
 use tower_http::cors::{Any, CorsLayer};
 use sqlx::{postgres::PgPoolOptions, error::BoxDynError};
 
@@ -14,13 +14,15 @@ use axum::{
     extract::Extension,
     Router,
     routing::{get, post},
-    response::Html, Json,
+    response::Html, Json, http::{StatusCode, HeaderMap},
 };
 
 use dotenv;
 use std::error::Error;
 use log::{trace, debug, info, warn, error};
 use log4rs;
+
+use crate::structs::get_timestamp;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>>{
@@ -80,7 +82,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
 
     let app = Router::new()
-    .route("/", get(|| async { Html("Hello <b>GET!!</b>") } ).post(|| async { Html("Hello <b>POST!!</b>") } ))
+    .route("/", get(root_get).post(root_post))
     .route("/ping", get(|| async { Html("pong GET") } ).post(|| async { Html("PONG POST") } ))
     .merge(models::signup::router())
     .merge(models::signin::router())
@@ -109,3 +111,28 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     Ok(())
 }
+
+
+pub async fn root_post(
+headers: HeaderMap
+
+) -> (StatusCode, Json<Value>) {
+    println!("{:?}", headers);
+    return (StatusCode::OK, Json(json!({
+        "response": "HELLO",
+        "method_sent": "POST",
+        "Time": get_timestamp()
+    })))
+}
+
+pub async fn root_get(
+    headers: HeaderMap
+    
+    ) -> (StatusCode, Json<Value>) {
+        println!("{:?}", headers);
+        return (StatusCode::OK, Json(json!({
+            "response": "HELLO",
+            "method_sent": "GET",
+            "Time": get_timestamp()
+        })))
+    }
