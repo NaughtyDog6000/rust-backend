@@ -50,7 +50,7 @@ pub async fn add_date_of_birth(
     let user = get_user(&pool, None, None, Some(request.token)).await;
     if user.is_err() 
     {
-        return (StatusCode::BAD_REQUEST, Json(json!("invalid token")));
+        return (StatusCode::BAD_REQUEST, Json(json!({"response":"invalid token"})));
     }
     let user = user.unwrap();
 
@@ -64,7 +64,7 @@ pub async fn add_date_of_birth(
         println!("{}", date_option.unwrap());
     } else {
         error!("invalid (impossible) date entered ");
-        return (StatusCode::BAD_REQUEST, Json(json!("DATE OF BIRTH IMPOSSIBLE")));
+        return (StatusCode::BAD_REQUEST, Json(json!({"response": "DATE OF BIRTH IMPOSSIBLE"})));
 
     }
     
@@ -107,8 +107,19 @@ pub async fn update_password(
     .execute(&pool)
     .await;
     println!("response: {:?}", response_pass_update);
-    warn!("PASSWORD UPDATING NOT COMPLETE");
-    // -- signout all --
 
-    return (StatusCode::OK, Json(json!({"response": "PSSWD UPDATE NOT FIN"})))
+    // -- signout all --
+    let response = sqlx::query("DELETE FROM tokens
+                WHERE user_id = $1")
+                .bind(user.id)
+                .execute(&pool)
+                .await;
+
+    let rows_affected = response.unwrap().rows_affected();
+
+    
+    return (StatusCode::OK, Json(json!({
+        "response": "success",
+        "signed_out": rows_affected
+    })));
 }
