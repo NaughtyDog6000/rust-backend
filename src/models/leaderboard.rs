@@ -28,7 +28,7 @@ impl Default for LeaderboardQueryStringParams {
 }
 
 pub fn router() -> Router {
-    Router::new().route("/scores/global/leaderboard",
+    Router::new().route("/scores/global",
         get(leaderboard)
         .post(|| async {"This does NOT support POST requests"})
     )
@@ -66,7 +66,7 @@ pub async fn leaderboard(
     .bind(&offset)
     .fetch_all(&pool).await;
 
-    let response = res.unwrap(); 
+    let response: Vec<Score> = res.unwrap(); 
     info!("response: {:?}", &response);
     // (StatusCode::OK, Json(json!(format!("length: {}, offset: {}.",length,offset))))
     (StatusCode::OK, Json(json!(response)))
