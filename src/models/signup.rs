@@ -115,7 +115,7 @@ pub async fn create_user(
     //return success code 200
     (StatusCode::OK, Json(json!({
         "signup": true,
-        "details": "Success",
+        "response": "Success",
         "username": username,
         "timestamp": timeestamp
 
