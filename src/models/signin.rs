@@ -12,8 +12,8 @@ use crate::{utils::{get_user, create_session_token}, structs::User};
 
 #[derive(Deserialize)]
 pub struct SigninRequestParams {
-    username: String,
-    email: String,
+    username: Option<String>,
+    email: Option<String>,
     password: String
 }
 
@@ -33,6 +33,8 @@ pub async fn signin (
     //parse the JSON Body of the request
     let SigninRequestParams {username, email, password} = request;
     
+    let username: String = username.unwrap(); 
+
     //find the user account with the username
     let user: User = match get_user(&pool, None, Some(username), None).await {
         Ok(user) => user,
