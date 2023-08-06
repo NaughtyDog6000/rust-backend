@@ -3,7 +3,7 @@ pub mod signup;
 pub mod test_token;
 pub mod leaderboard;
 pub mod upload_score;
-pub mod user_account_info;
+pub mod user_account_profile;
 pub mod signout;
 pub mod update_account_data;
 pub mod delete_account;

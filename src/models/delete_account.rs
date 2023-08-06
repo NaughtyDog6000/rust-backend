@@ -6,7 +6,7 @@ use std::string;
 use axum::{
     Extension, Json, Router,
     routing::{get, post},
-    http::{StatusCode, response},
+    http::{StatusCode, response, HeaderMap},
     response::{IntoResponse, Response},
     extract::Query
 };
@@ -30,7 +30,6 @@ pub fn router() -> Router {
 
 #[derive(Serialize, Deserialize)]
 pub struct DeleteAccountParams {
-    pub token: String,
     pub username: String 
 } 
 // username is required to ensure that someone doesnt accidentally delete the acc
@@ -38,9 +37,22 @@ pub struct DeleteAccountParams {
 
 pub async fn delete_account(
     Extension(pool): Extension<PgPool>,
-    Json(request): Json<DeleteAccountParams>
+    headers: HeaderMap,
+    Json(request): Json<DeleteAccountParams>,
 ) -> (StatusCode, Json<Value>) {
-    let user_req = get_user(&pool, None, None, Some(request.token)).await;
+    // -- get token from headers -- 
+    let auth_token = headers.get("auth");
+    if auth_token.is_none() {
+        return (StatusCode::IM_A_TEAPOT, Json(json!({
+            "response": "token not present you melon"
+        })));
+    }
+    let auth_token = auth_token.unwrap().to_str().unwrap().to_owned(); 
+
+
+
+    
+    let user_req = get_user(&pool, None, None, Some(auth_token)).await;
 
     if user_req.is_err() {
         return (StatusCode::BAD_REQUEST, Json(json!({"response": user_req.unwrap_err()})));

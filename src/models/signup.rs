@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use sqlx::{pool, PgPool, postgres::PgAdvisoryLockKey};
 use bcrypt::{hash, DEFAULT_COST,};
 
-use crate::{structs::{build_user, User, get_timestamp}, utils::check_password_regex};
+use crate::{structs::{build_user, User, get_timestamp}, utils::{check_password_regex, check_username_regex}};
 
 pub fn router() -> Router {
     Router::new().route("/signup",
@@ -40,15 +40,24 @@ pub async fn create_user(
 
     //verify validity of password, username etc
 
-    
-    
-
-    if check_password_regex(&password) {
-        warn!("password: {password}, is a vaild username (check by regex)");
+    if check_username_regex(&username) {
+        warn!("username: {username}, is a vaild username (check by regex)");
     } else {
-        warn!("password: {password}, is not a valid username (regex)"); //never prints even when 401 is returned???
-        return (StatusCode::BAD_REQUEST, Json(json!("invalid username (un-allowed characters)")));
+        warn!("username: {username}, is not a valid username (regex)"); //never prints even when 401 is returned???
+        return (StatusCode::BAD_REQUEST, Json(json!({
+            "signup": false,
+            "response": "username was invalid, only alphanumeric characters and _. are allowed",
+            "timestamp": get_timestamp()
+    
+        })));
     }
+    
+    // if check_password_regex(&password) {
+    //     warn!("password: {password}, is a vaild password (check by regex)");
+    // } else {
+    //     warn!("password: {password}, is not a valid password (regex)"); //never prints even when 401 is returned???
+    //     return (StatusCode::BAD_REQUEST, Json(json!("invalid password (un-allowed characters)")));
+    // }
 
     // println!("regex & parse took {}ms", sw.elapsed_ms());
     
@@ -56,7 +65,12 @@ pub async fn create_user(
         //check length
         if password.len() <= 7 {
             println!("username valid");
-            return (StatusCode::BAD_REQUEST, Json(json!("password too short")));
+            return (StatusCode::BAD_REQUEST, Json(json!({
+                "signup": false,
+                "response": "password was too short (passwords less than 7 characters can ",
+                "timestamp": get_timestamp()
+        
+            })));
         }
 
     // println!("length check took {}ms", sw.elapsed_ms());
@@ -77,10 +91,10 @@ pub async fn create_user(
             println!("user with username already exists, canceling creation");
             return (StatusCode::BAD_REQUEST, Json(json!({
                 "signup": false,
-                "details": "user with that username already exists",
+                "response": "a user with that name already exists",
                 "timestamp": get_timestamp()
         
-            })))
+            })));
         }
         _ => println!("user with that name doesn't exist, finishing creation"),
     }

@@ -4,7 +4,7 @@ use std::string;
 use axum::{
     Extension, Json, Router,
     routing::{get, post},
-    http::StatusCode,
+    http::{StatusCode, HeaderMap},
     response::{IntoResponse, Response},
     extract::Query
 };
@@ -29,25 +29,33 @@ pub fn router() -> Router {
 
 #[derive(Deserialize)]
 pub struct UpdateDOBParams {
-    token: String,
     date: String,
     
 }
 
 #[derive(Deserialize)]
 pub struct UpdatePasswordRequestParams {
-    token: String,
     password: String,
 }
 
 
 pub async fn add_date_of_birth(
     Extension(pool): Extension<PgPool>,
-    Json(request): Json<UpdateDOBParams>
+    headers: HeaderMap,
+    Json(request): Json<UpdateDOBParams>,
 ) -> (StatusCode, Json<Value>) {
-    
+    let auth_token = headers.get("auth");
+    if auth_token.is_none() {
+        return (StatusCode::IM_A_TEAPOT, Json(json!({
+            "response": "token not present you melon"
+        })));
+    }
+    let auth_token = auth_token.unwrap().to_str().unwrap().to_owned(); 
+
+
+
     // -- check the toekn --
-    let user = get_user(&pool, None, None, Some(request.token)).await;
+    let user = get_user(&pool, None, None, Some(auth_token)).await;
     if user.is_err() 
     {
         return (StatusCode::BAD_REQUEST, Json(json!({"response":"invalid token"})));
@@ -83,10 +91,21 @@ pub async fn add_date_of_birth(
 
 pub async fn update_password(
     Extension(pool): Extension<PgPool>,
-    Json(request): Json<UpdatePasswordRequestParams>
+    headers: HeaderMap,
+    Json(request): Json<UpdatePasswordRequestParams>,
 ) -> (StatusCode, Json<Value>) {
+    // -- get token from headers -- 
+    let auth_token = headers.get("auth");
+    if auth_token.is_none() {
+        return (StatusCode::BAD_REQUEST, Json(json!({
+            "response": "token not present you melon"
+        })));
+    }
+    let auth_token = auth_token.unwrap().to_str().unwrap().to_owned(); 
+
+
     // -- check token --
-    let user = get_user(&pool, None, None, Some(request.token)).await;
+    let user = get_user(&pool, None, None, Some(auth_token)).await;
 
 
     if user.is_err() {return (StatusCode::BAD_REQUEST, Json(json!({"response": "BAD TOKEN"})));}

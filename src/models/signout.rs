@@ -6,17 +6,18 @@ use std::string;
 use axum::{
     Extension, Json, Router,
     routing::{get, post},
-    http::StatusCode,
+    http::{StatusCode, HeaderMap},
     response::{IntoResponse, Response},
     extract::Query
 };
 
 use log::{warn, info, trace, error};
+use log4rs::encode::json;
 use serde::{Deserialize, __private::size_hint::from_bounds};
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::{structs::{get_timestamp, TokenRequestParams}, utils::{get_user, check_token}};
+use crate::{structs::get_timestamp, utils::{get_user, check_token}};
 
 use super::leaderboard::LeaderboardQueryStringParams;
 
@@ -36,12 +37,28 @@ pub fn router() -> Router {
 // signs out all tokens for the associated accounts
 pub async fn signout_all(
     Extension(pool): Extension<PgPool>,
-    Json(request): Json<TokenRequestParams>
+    headers: HeaderMap
+
 ) -> (StatusCode, Json<Value>) {
-    let user = get_user(&pool, None, None, Some(request.token)).await;
+    // -- get token from headers -- 
+    let auth_token = headers.get("auth");
+    if auth_token.is_none() {
+        return (StatusCode::IM_A_TEAPOT, Json(json!({
+            "response": "token not present you melon"
+        })));
+    }
+    let auth_token = auth_token.unwrap().to_str().unwrap().to_owned(); 
+
+
+    let user = get_user(&pool, None, None, Some(auth_token)).await;
     if user.is_err() {
         warn!("invalid token used");
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!("an error occured in finding the user associated with the token")));
+        return (StatusCode::BAD_REQUEST, 
+            Json(json!({
+                 "response": "this token doesn't exist or is already invalid"
+                 }))
+        );
+        // return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!("an error occured in finding the user associated with the token")));
     }
         
 
@@ -64,9 +81,20 @@ pub async fn signout_all(
 // signs out the current token
 pub async fn signout(
     Extension(pool): Extension<PgPool>,
-    Json(request): Json<TokenRequestParams>
+    headers: HeaderMap    
 ) -> (StatusCode, Json<Value>) {
-    let valid_token: bool = check_token(&pool, request.token.clone()).await; // this isnt necessary?
+    // -- get token from headers -- 
+    let auth_token = headers.get("auth");
+    if auth_token.is_none() {
+        return (StatusCode::IM_A_TEAPOT, Json(json!({
+            "response": "token not present you melon"
+        })));
+    }
+    let auth_token = auth_token.unwrap().to_str().unwrap().to_owned(); 
+
+
+
+    let valid_token: bool = check_token(&pool, auth_token.clone()).await; // this isnt necessary?
     if !valid_token 
     {
         warn!("signout attempt of a token that is either invalid or doesnt exist");
@@ -81,7 +109,7 @@ pub async fn signout(
 
     let response = sqlx::query("DELETE FROM tokens
     WHERE token = $1")
-    .bind(request.token)
+    .bind(auth_token)
     .execute(&pool).await;
 
     if response.is_err() {

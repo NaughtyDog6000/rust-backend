@@ -143,7 +143,16 @@ pub async fn check_token(pool: &PgPool, token: String) -> bool {
     // return Err(String::from("error occured in token check"));
 }
 
+// Change this to only accept regular characters and symbols and nothing stpid
 pub fn check_password_regex(
+    password: &String
+) -> bool {
+    let reg: Regex = Regex::new(r"^[0-9A-Za-z_.]+$").unwrap();
+    if reg.is_match(password) {return true;}
+    return false;
+}
+
+pub fn check_username_regex(
     password: &String
 ) -> bool {
     let reg: Regex = Regex::new(r"^[0-9A-Za-z_.]+$").unwrap();

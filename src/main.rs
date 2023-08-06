@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::test_token::router())
     .merge(models::leaderboard::router())
     .merge(models::upload_score::router())
-    .merge(models::user_account_info::router())
+    .merge(models::user_account_profile::router())
     .merge(models::signout::router())
     .merge(models::update_account_data::router())
     .merge(models::delete_account::router())

@@ -1,7 +1,9 @@
+use std::fmt::Debug;
+
 use axum::{
     Extension, Json, Router,
     routing::{get, post},
-    http::StatusCode,
+    http::{StatusCode, HeaderMap},
     response::{IntoResponse, Response},
     extract::Query
 };
@@ -11,7 +13,7 @@ use serde::Deserialize;
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::structs::Score;
+use crate::{structs::Score, utils::check_token};
 
 #[derive(Deserialize)]
 pub struct LeaderboardQueryStringParams {
@@ -36,6 +38,7 @@ pub fn router() -> Router {
 
 pub async fn leaderboard(    
     Extension(pool): Extension<PgPool>,
+    headers: HeaderMap,
     query_params: Option<Query<LeaderboardQueryStringParams>>,
 ) -> (StatusCode, Json<Value>) {
 
@@ -46,12 +49,56 @@ pub async fn leaderboard(
     let offset: i32 = query_params.offset as i32;
 
     // -- check for TOKEN to allow the request/higher request amounts --
-    warn!("chacking for token not currently being done");
+    // -- get token from headers -- 
+    let auth_token_header = headers.get("auth");
+
+    let mut signed_in: bool = false; // auth status
+    let auth_token: String; //token provided
+
+    if auth_token_header.is_none() {
+        // return (StatusCode::IM_A_TEAPOT, Json(json!({
+        //     "response": "token not present you melon"
+        // })));
+        info!("anonymous signin access");
+    } else {
+        auth_token = auth_token_header.unwrap().to_str().unwrap().to_owned(); //unwraps from &headervalue type to string
+        signed_in = check_token(&pool, auth_token).await; //verifies the token, returning true or false for the validity 
+        if signed_in == false { //creates a log if token is invalid (someone tried to use a token in the headers that was bad)
+            warn!("an invalid token use attempt for accessing the leaderboard");
+            return (StatusCode::BAD_REQUEST, Json(json!({
+                "response": "token used was invalid, please reauthenticate and try again"
+            })));
+        }
+    }
+
 
     // -- apply limitations (min & max request amounts) -- 
+    
+    //signin dependant limitations
+    if signed_in {
+        if length > 50 {
+            return (StatusCode::BAD_REQUEST, Json(json!({
+                "response": "users can request a maximum of 50 records at a time"
+                
+            })));
+        }
 
-    if length == 0 {
-        return (StatusCode::BAD_REQUEST, Json(json!("length (number of records requested) cannot be 0")));
+    } else {
+        if length > 10 {
+            return (StatusCode::BAD_REQUEST, Json(json!({
+                "response": "anonymous users can only request 10 records at a time"
+                
+            })));
+        }
+    }
+
+
+    //global limitations (limitations that apply regardless of signin status)
+    if length <= 0 || offset < 0 {
+        return (StatusCode::BAD_REQUEST, Json(json!({
+            "response": "the length cannot be 0 or less, and/or the offset cannot be less than zero"
+            
+        })));
     }
 
     // -- make query to database for the records (scores) requested --

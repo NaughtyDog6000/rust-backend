@@ -3,7 +3,7 @@ use std::string;
 use axum::{
     Extension, Json, Router,
     routing::{get, post},
-    http::StatusCode,
+    http::{StatusCode, HeaderMap},
     response::{IntoResponse, Response},
     extract::Query
 };
@@ -17,7 +17,6 @@ use crate::{structs::{Score, get_timestamp, User}, utils::{check_token, get_user
 
 #[derive(Deserialize)]
 pub struct UploadScoreRequestParams {
-    token: String,
     score: i64,
     gamemode: String,
     epoch_game_start_time: i64,
@@ -33,12 +32,21 @@ pub fn router() -> Router {
 
 pub async fn leaderboard(    
     Extension(pool): Extension<PgPool>,
+    headers: HeaderMap,
     Json(request): Json<UploadScoreRequestParams>,
 ) -> (StatusCode, Json<Value>) {
+    let auth_token = headers.get("auth");
+    if auth_token.is_none() {
+        return (StatusCode::BAD_REQUEST, Json(json!({
+            "response": "token not present you melon"
+        })));
+    }
+    let auth_token: String = auth_token.unwrap().to_str().unwrap().to_owned(); 
+
     // -- parse the Request Params into struct --
 
     info!("SCORE UPLOAD REQUEST PARAMETERS:\nTOKEN: {},\nSCORE: {},\nGamemode: {},\nGameStart: {}\nGameEnd: {}",
-    request.token, request.score, request.gamemode,
+    auth_token, request.score, request.gamemode,
     request.epoch_game_start_time, request.epoch_game_end_time);
 
     // -- check for TOKEN --
@@ -48,7 +56,7 @@ pub async fn leaderboard(
     let user: User;
 
     // -- extract user_id from token --
-    let result: Result<User, String> = get_user(&pool, None, None, Some(request.token)).await;
+    let result: Result<User, String> = get_user(&pool, None, None, Some(auth_token)).await;
     if result.is_err() {
         warn!("bad token use attempted");
         return (StatusCode::BAD_REQUEST, Json(json!("bad token")))

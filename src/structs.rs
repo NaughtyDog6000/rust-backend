@@ -35,14 +35,6 @@ pub struct Token {
 
 // -- END OF TABLES --
 
-// -- REQUEST PARAMS --
-#[derive(Serialize, Deserialize)]
-pub struct TokenRequestParams {
-    pub token: String
-}
-
-
-
 
 pub fn build_user(
     id: i64,

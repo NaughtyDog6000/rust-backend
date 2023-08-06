@@ -22,8 +22,8 @@ pub fn router() -> Router {
     Router::new()
     .route("/friends/add", get(|| async {"go get some friends"}).post(|| async {"TBD"}))
     .route("/friends/remove", get(|| async {"are they really *that* bad?"}).post(|| async {"TBD"}))
-    .route("/friends/view/all", get(|| async {"look at how many there are(n't)"}).post(|| async {"TBD"}))
-    .route("/friends/view", get(friend_status_query_strings).post(|| async {"TBD"}))
+    .route("/friends/status/all", get(|| async {"look at how many there are(n't)"}).post(|| async {"TBD"}))
+    .route("/friends/status", get(friend_status_query_strings).post(|| async {"TBD"}))
 }
 
 // sending friend requests and accepting friend requests can be done through the add route 
@@ -41,7 +41,7 @@ headers: HeaderMap
     let request: GetFriendQueryStringParams = params.0;  // this is wierd https://docs.rs/axum/latest/axum/extract/struct.Query.html
 
     println!("{:?}",request.user);
-    println!("{:?}", headers);
+    println!("{:?}", headers.get("auth"));
 
     (StatusCode::OK, Json(json!({
         "response": "success",
