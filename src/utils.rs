@@ -2,7 +2,7 @@ use std::string;
 use rand::{distributions::Alphanumeric, Rng};
 use regex::Regex;
 
-use crate::structs::{build_user, User, get_timestamp, Token};
+use crate::structs::{build_user, User, get_timestamp, Token, FriendRequest, FriendRecord};
 use log::{warn, info, error};
 use serde_json::json;
 use sqlx::{pool, PgPool, database::HasValueRef, Error,};
@@ -66,6 +66,9 @@ pub async fn get_user(
     let user: User = res.unwrap();
     return Ok(user); 
 }
+
+
+// -- Token Creation/Validation --
 
 pub async fn create_session_token(
     pool: &PgPool,
@@ -140,8 +143,12 @@ pub async fn check_token(pool: &PgPool, token: String) -> bool {
 
     return true
 
-    // return Err(String::from("error occured in token check"));
 }
+
+// -- END Token Creation/Validation END --
+
+
+// -- Regex Checking/Validations --
 
 // Change this to only accept regular characters and symbols and nothing stpid
 pub fn check_password_regex(
@@ -159,3 +166,74 @@ pub fn check_username_regex(
     if reg.is_match(password) {return true;}
     return false;
 }
+
+// -- END Regex Checking/Validations END  --
+
+
+// -- Friends/Friend Requests --
+
+pub async fn get_friend_status(
+    pool: &PgPool,
+    user_id: i64, 
+    target_id: i64
+    ) -> Result<(Option<FriendRecord>, Option<FriendRequest>),String> {
+        
+        // query the Friend Request table for a friend request between the two users
+        let mut response = sqlx::query_as::<_,FriendRequest>("
+        SELECT * FROM friend_requests
+        WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)
+        ")
+        .bind(user_id)
+        .bind(target_id)
+        .fetch_optional(pool)
+        .await;
+
+        //error handling
+        if response.is_err() {
+            return Err(String::from("An error occured in the response from the Friend Request table"));
+        }
+
+        // unwrapping as there is no errors
+        let opt_request = response.unwrap();
+
+        //if there is a friend request, return that 
+        if opt_request.is_some() {
+            return Ok((None,Some(opt_request.unwrap())));
+        }
+        //otherwise query the friends table for a friendship between the two users
+        
+        let mut response = sqlx::query_as::<_,FriendRecord>("
+        SELECT * FROM friends
+        WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)
+        ")
+        .bind(user_id)
+        .bind(target_id)
+        .fetch_optional(pool)
+        .await;
+
+        //error handling
+        if response.is_err() {
+            return Err(String::from("An error was returned from the database on the Friends table query"))
+        }
+
+        //unwrap as no err
+        let opt_request = response.unwrap();
+        
+        //if there is a friend request then return that, else return the fact that there is no relation between the users
+        if opt_request.is_some() {
+            return Ok((Some(opt_request.unwrap()), None));
+        }
+
+        return Err(String::from("NO relationship between users found Found"));
+    }
+        
+    pub async fn get_friends(user_id: i64) -> Result<(Option<FriendRecord>, Option<FriendRequest>),String> {
+        
+        return Err(String::from("This user has no friends :("));
+    }
+        
+    // pub async fn get_pending_friend_requests(user_id: i64) -> Result<FriendRequest, String> {
+        
+    // }
+
+// -- END Friends/Friend Requests END --

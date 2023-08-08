@@ -24,13 +24,29 @@ pub struct Score {
 }
 
 #[derive(sqlx::FromRow, Debug)]
-
 pub struct Token {
     pub id: i64,
     pub user_id: i64,
     pub epoch_expiry_date: i64,
     pub token: String,
     pub creation_timestamp: PrimitiveDateTime,
+}
+
+#[derive(sqlx::FromRow, Debug)]
+pub struct FriendRequest {
+    pub id: i64,
+    pub sender_id: i64,
+    pub receiver_id: i64,
+    pub creation_timestamp: PrimitiveDateTime
+}
+
+#[derive(sqlx::FromRow, Debug)]
+pub struct FriendRecord {
+    pub id: i64,
+    pub sender_id: i64,
+    pub receiver_id: i64,
+    pub creation_timestamp: PrimitiveDateTime,
+    pub acceptance_timestamp: PrimitiveDateTime
 }
 
 // -- END OF TABLES --
@@ -65,3 +81,6 @@ pub fn get_timestamp() -> i64 {
     // println!("new signup at: {}", time_since_epoch.as_secs());
     time_since_epoch.as_secs() as i64
 }
+
+
+

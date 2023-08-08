@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS tokens
 -- this is taken from https://www.the-art-of-web.com/sql/trigger-delete-old/ (25/7/23)
 
 -- automatically triggers a function to delete all rows (tokens) older than 30 days
-CREATE FUNCTION delete_old_rows() RETURNS trigger
+CREATE FUNCTION tokens_delete_old_rows() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -33,4 +33,4 @@ $$;
 
 CREATE TRIGGER tokens_trigger_delete_old_rows
     AFTER INSERT ON tokens
-    EXECUTE PROCEDURE delete_old_rows();
+    EXECUTE PROCEDURE tokens_delete_old_rows();
