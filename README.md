@@ -14,5 +14,6 @@ it will include: **Accounts**, Player **Achievements** (if I get round to it), *
 
 ### Small notes
 
-**cargo run** - runs the server **without** migrating the DB first
-**cargo run migrate** - migrates the server then runs
+**cargo run** - runs the server **without** migrating the DB first<br>
+**cargo run migrate** - migrates the server then runs<br>
+**build documentation** cargo doc --no-deps<br>
