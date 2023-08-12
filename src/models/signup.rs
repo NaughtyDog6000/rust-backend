@@ -10,7 +10,8 @@ use serde_json::{json, Value};
 use sqlx::{pool, PgPool, postgres::PgAdvisoryLockKey};
 use bcrypt::{hash, DEFAULT_COST,};
 
-use crate::{structs::{build_user, User, get_timestamp}, utils::{check_password_regex, check_username_regex}};
+use crate::structs::{build_user, User};
+use crate::utils::{check_password_regex, check_username_regex, get_timestamp};
 
 pub fn router() -> Router {
     Router::new().route("/signup",

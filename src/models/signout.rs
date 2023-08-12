@@ -13,11 +13,11 @@ use axum::{
 
 use log::{warn, info, trace, error};
 use log4rs::encode::json;
-use serde::{Deserialize, __private::size_hint::from_bounds};
+use serde::Deserialize;
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::{structs::get_timestamp, utils::{get_user, check_token}};
+use crate::utils::{get_user, check_token, get_timestamp};
 
 use super::leaderboard::LeaderboardQueryStringParams;
 

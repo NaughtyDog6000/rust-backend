@@ -13,7 +13,9 @@ use serde::Deserialize;
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::{structs::{Score, get_timestamp, User}, utils::{check_token, get_user}};
+use crate::{structs::{Score, User}, 
+            utils::{check_token, get_user, get_timestamp, get_datetime_utc}};
+
 
 #[derive(Deserialize)]
 pub struct UploadScoreRequestParams {
@@ -90,8 +92,9 @@ pub async fn leaderboard(
     // upload the record to the scores table
 
 
-    let resp = sqlx::query("INSERT INTO scores (user_id, score, game_mode, epoch_upload_time, epoch_game_start_time, epoch_game_end_time)
-                VALUES ($1, $2, $3, $4, $5, $6)
+    let resp = sqlx::query("
+    INSERT INTO scores (user_id, score, game_mode, epoch_upload_time, epoch_game_start_time, epoch_game_end_time)
+    VALUES ($1, $2, $3, $4, $5, $6)
     ")
     .bind(user.id)
     .bind(request.score)

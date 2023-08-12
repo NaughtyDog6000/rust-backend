@@ -1,14 +1,27 @@
-use std::string;
+use std::{string, time::{SystemTime, UNIX_EPOCH}};
+use chrono::{NaiveDateTime, Utc};
 use rand::{distributions::Alphanumeric, Rng};
 use regex::Regex;
 
-use crate::structs::{build_user, User, get_timestamp, Token, FriendRequest, FriendRecord};
+use crate::structs::{build_user, User, Token, FriendRequest, FriendRecord, FriendStatusEnum, RelationshipRecordEnum};
 use log::{warn, info, error};
 use serde_json::json;
 use sqlx::{pool, PgPool, database::HasValueRef, Error,};
 use axum::{Extension, Json, http::StatusCode, headers::Expires};
 
+// -- Timestamp/Datetime --
+pub fn get_datetime_utc() -> NaiveDateTime {
+    return Utc::now().naive_utc();
+}
 
+pub fn get_timestamp() -> i64 {
+    let now = SystemTime::now();
+    let time_since_epoch = now.duration_since(UNIX_EPOCH).expect("time did a fucky wucky");
+    // println!("new signup at: {}", time_since_epoch.as_secs());
+    time_since_epoch.as_secs() as i64
+}
+
+// -- END Timestamp/Datetime END --
 
 //gets the user from the database when given one of the unuique identifiers (prefering id)
 pub async fn get_user(
@@ -172,12 +185,24 @@ pub fn check_username_regex(
 
 // -- Friends/Friend Requests --
 
+#[derive(Debug)]
+pub struct FriendStatus {
+    pub status: FriendStatusEnum,
+    pub request: Option<FriendRequest>,
+    pub record: Option<FriendRecord>,
+}
+
 pub async fn get_friend_status(
     pool: &PgPool,
     user_id: i64, 
     target_id: i64
-    ) -> Result<(Option<FriendRecord>, Option<FriendRequest>),String> {
+    ) -> Result<FriendStatus, String> {
         
+        // make sure that the two users are not the same :')
+        if user_id == target_id {
+            return Err(String::from("User requested the is the same as the one requesting it"));
+        }
+
         // query the Friend Request table for a friend request between the two users
         let mut response = sqlx::query_as::<_,FriendRequest>("
         SELECT * FROM friend_requests
@@ -190,6 +215,7 @@ pub async fn get_friend_status(
 
         //error handling
         if response.is_err() {
+            error!("{:?}", response.unwrap());
             return Err(String::from("An error occured in the response from the Friend Request table"));
         }
 
@@ -198,7 +224,14 @@ pub async fn get_friend_status(
 
         //if there is a friend request, return that 
         if opt_request.is_some() {
-            return Ok((None,Some(opt_request.unwrap())));
+            let opt_request = opt_request.unwrap();
+            // if the sender id is the user who sent the request
+            if opt_request.sender_id == user_id {
+                return Ok(FriendStatus { status: FriendStatusEnum::UserRequested, request: Some(opt_request), record: None });
+            } else {
+                return Ok(FriendStatus { status: FriendStatusEnum::TargetRequested, request: Some(opt_request), record: None });
+            }
+
         }
         //otherwise query the friends table for a friendship between the two users
         
@@ -213,27 +246,167 @@ pub async fn get_friend_status(
 
         //error handling
         if response.is_err() {
+            error!("{:?}", response.unwrap_err());
             return Err(String::from("An error was returned from the database on the Friends table query"))
         }
 
         //unwrap as no err
-        let opt_request = response.unwrap();
+        let opt_record = response.unwrap();
         
-        //if there is a friend request then return that, else return the fact that there is no relation between the users
-        if opt_request.is_some() {
-            return Ok((Some(opt_request.unwrap()), None));
+        //if there is a friendship then return that, else return the fact that there is no relation between the users
+        if opt_record.is_some() {
+            return Ok( FriendStatus { status: FriendStatusEnum::Friends, request: None, record: Some(opt_record.unwrap()) });
         }
 
-        return Err(String::from("NO relationship between users found Found"));
+        return Ok( FriendStatus { status: FriendStatusEnum::Unrelated, request: None, record: None });
     }
         
-    pub async fn get_friends(user_id: i64) -> Result<(Option<FriendRecord>, Option<FriendRequest>),String> {
-        
-        return Err(String::from("This user has no friends :("));
+
+    /// returns the vec of friends of the user passed 
+    pub async fn get_friends(
+        pool: &PgPool,        
+        user_id: i64
+    ) -> Result<Vec<FriendRecord>, String> {
+
+        let response = sqlx::query_as::<_,FriendRecord>("
+        SELECT *
+        FROM friends
+        WHERE sender_id = $1 OR receiver_id = $1
+        ")
+        .bind(user_id)
+        .fetch_all(pool)
+        .await;
+
+        if response.is_err() {
+            let error = response.unwrap_err().to_string();
+            return Err(error);
+        }
+            
+        let friends = response.unwrap();
+        return Ok(friends);
+    }
+    
+    /// returns all the friend 
+    pub async fn get_outgoing_friend_requests(
+        user_id: i64
+    ) -> Result<Vec<FriendRequest>, String> {
+        todo!();
+        // return Err(String::from("NOT COMPLETE"));
+    }
+
+    pub async fn get_incoming_friend_requests(
+        user_id: i64
+    ) -> Result<Vec<FriendRequest>, String> {
+        todo!();
+        // return Err(String::from("NOT COMPLETE"));
     }
         
-    // pub async fn get_pending_friend_requests(user_id: i64) -> Result<FriendRequest, String> {
+    /// returns a tuple containing the vecs of the relationships (requested, requestee or friends)
+    pub async fn get_all_relationships(
+        user_id: i64
+    ) -> Result<Vec<RelationshipRecordEnum>, String> {
+        todo!();
+        // return Err(String::from("NOT COMPLETE"));
+    }
+    
+    
+    // -- ADDING AND REMOVING FRIENDS --
+    
+
+    ///**THIS FUNCTION DOES NOT VERIFY THE VALIDITY OF THE USERS PASSED**<br>
+    /// Returns the status of the relationship between the users after the actions have been taken<br>
+    /// if an error occurs it is returned as a string
+    pub async fn add_or_accept_friend(
+        pool: &PgPool,
+        user_id: i64, 
+        target_id: i64
+
+    ) -> Result<FriendStatusEnum, String> {
         
-    // }
+        let status = get_friend_status(pool, user_id, target_id).await;
+        // if no relationship exists, send a friend request
+        if status.is_err() {
+            let status = status.unwrap_err();
+            error!("an error was returned from get friend status: {}", status);
+            return Err(status);
+        }
+        
+        match status.unwrap().status {
+            // if the users have no relation, send a friend request
+            FriendStatusEnum::Unrelated => {
+                let response = sqlx::query("
+                INSERT INTO friend_requests (sender_id, receiver_id)
+                VALUES ($1, $2)
+                ")
+                .bind(user_id)
+                .bind(target_id)
+                .execute(pool)
+                .await;
+
+                info!("response: {:?}", response);
+
+                return Ok(FriendStatusEnum::UserRequested);
+            },
+            // if there is a friend request from the target user accept the friend request and send to the users friends table
+            FriendStatusEnum::TargetRequested => {
+                // UPDATE TO BE A TRANSACTION _________________________________________________
+
+                let response: Result<sqlx::postgres::PgQueryResult, Error> = sqlx::query("
+                DELETE FROM friend_requests
+                WHERE sender_id = $1 AND receiver_id = $2
+                ")
+                .bind(user_id)
+                .bind(target_id)
+                .execute(pool)
+                .await;
+
+                if response.is_err() {
+                    return Err(response.unwrap_err().to_string());
+                }
+                let resp = response.unwrap();
+                info!("{:?}", resp);
+
+                let response = sqlx::query("
+                INSERT INTO friends (sender_id, receiver_id, creation_timestamp)
+	                SELECT sender_id, receiver_id, creation_timestamp
+	                FROM friend_requests
+	                WHERE sender_id = $1 AND receiver_id = $2;
+                ")
+                .bind(user_id)
+                .bind(target_id)
+                .execute(pool)
+                .await;
+
+                if response.is_err() {
+                    return Err(response.unwrap_err().to_string());
+                }
+                let resp = response.unwrap();
+                info!("{:?}", resp);
+
+
+                return Ok(FriendStatusEnum::Friends);
+            },
+            // if they are already friends... why are you trying to add them?
+            FriendStatusEnum::Friends => {
+                return Ok(FriendStatusEnum::Friends);
+            },
+            // if the user has already sent a friend request, ... there is nothing to do.
+            FriendStatusEnum::UserRequested => {
+                return Ok(FriendStatusEnum::UserRequested);
+            }
+            FriendStatusEnum::Error => {
+                return Err(String::from("an error occured"));
+            }
+
+        }
+    }
+
+    pub async fn remove_or_cancel_friend(
+        pool: &PgPool,
+        user_id: i64, 
+        target_id: i64
+    ) -> Result<(), String> {
+        todo!();
+    }
 
 // -- END Friends/Friend Requests END --

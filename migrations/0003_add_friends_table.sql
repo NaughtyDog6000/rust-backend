@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS friends
 (
     id BIGSERIAL NOT NULL PRIMARY KEY,
     sender_id bigint NOT NULL,
-    reciever_id bigint NOT NULL,
+    receiver_id bigint NOT NULL,
     creation_timestamp TIMESTAMP NOT NULL,
     acceptance_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

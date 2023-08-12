@@ -22,7 +22,7 @@ use std::error::Error;
 use log::{trace, debug, info, warn, error};
 use log4rs;
 
-use crate::structs::get_timestamp;
+use crate::utils::get_timestamp;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>>{
@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     
         //Logging file
         log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-        // trace!("detailed tracing info");
+        // trace!("detailed tracing info on your mothers maiden name");
         // debug!("debug info");
         // info!("relevant general info");
         // warn!("this may be bad, you should take a look");

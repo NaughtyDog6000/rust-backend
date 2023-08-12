@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use sqlx::types::time::PrimitiveDateTime;
+use chrono::NaiveDateTime;
+
+use crate::utils::get_timestamp;
 // -- TABLES --
 
 #[derive(Deserialize, sqlx::FromRow, Debug)]
@@ -23,33 +25,51 @@ pub struct Score {
     pub game_mode: String,
 }
 
-#[derive(sqlx::FromRow, Debug)]
+#[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
 pub struct Token {
     pub id: i64,
     pub user_id: i64,
     pub epoch_expiry_date: i64,
     pub token: String,
-    pub creation_timestamp: PrimitiveDateTime,
+    pub creation_timestamp: NaiveDateTime,
 }
 
-#[derive(sqlx::FromRow, Debug)]
+#[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
 pub struct FriendRequest {
     pub id: i64,
     pub sender_id: i64,
     pub receiver_id: i64,
-    pub creation_timestamp: PrimitiveDateTime
+    pub creation_timestamp: NaiveDateTime
 }
 
-#[derive(sqlx::FromRow, Debug)]
+#[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
 pub struct FriendRecord {
     pub id: i64,
     pub sender_id: i64,
     pub receiver_id: i64,
-    pub creation_timestamp: PrimitiveDateTime,
-    pub acceptance_timestamp: PrimitiveDateTime
+    pub creation_timestamp: NaiveDateTime,
+    pub acceptance_timestamp: NaiveDateTime
 }
 
 // -- END OF TABLES --
+
+// -- enums --
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub enum FriendStatusEnum {
+    Friends,
+    UserRequested,
+    TargetRequested,
+    Unrelated,
+    Error
+}
+
+pub enum RelationshipRecordEnum {
+    Friend (FriendRecord),
+    FriendRequest (FriendRequest),
+}
+
+// -- END OF enums --
 
 
 pub fn build_user(
@@ -75,12 +95,7 @@ pub fn build_user(
 
 
 
-pub fn get_timestamp() -> i64 {
-    let now = SystemTime::now();
-    let time_since_epoch = now.duration_since(UNIX_EPOCH).expect("time did a fucky wucky");
-    // println!("new signup at: {}", time_since_epoch.as_secs());
-    time_since_epoch.as_secs() as i64
-}
+
 
 
 
