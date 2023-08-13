@@ -350,7 +350,7 @@ pub async fn get_friend_status(
             // if there is a friend request from the target user accept the friend request and send to the users friends table
             FriendStatusEnum::TargetRequested => {
                 // UPDATE TO BE A TRANSACTION _________________________________________________
-
+                // todo!();
                 let response: Result<sqlx::postgres::PgQueryResult, Error> = sqlx::query("
                 DELETE FROM friend_requests
                 WHERE sender_id = $1 AND receiver_id = $2
@@ -401,12 +401,30 @@ pub async fn get_friend_status(
         }
     }
 
+    ///**THIS FUNCTION DOES NOT VERIFY THE VALIDITY OF THE USERS PASSED**<br>
+    ///if an error occurs it is returned as a string
     pub async fn remove_or_cancel_friend(
         pool: &PgPool,
         user_id: i64, 
         target_id: i64
     ) -> Result<(), String> {
         todo!();
+
+        let response = sqlx::query("
+        DELETE FROM friends
+        WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)
+        ")
+        .bind(user_id)
+        .bind(target_id)
+        .execute(pool)
+        .await;
+    
+        if response.is_err() {
+            println!("{}", response.unwrap_err());
+            return  Err(response.unwrap_err().to_string());
+        }
+
+        return Ok(());
     }
 
 // -- END Friends/Friend Requests END --

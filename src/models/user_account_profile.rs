@@ -22,9 +22,8 @@ pub fn router() -> Router {
 
 //if no query string params are provided, it returns the user making the request's profile
 
-//accepts an optional token and checks the friend status of the requester to the user
-//if the profile is set to private return info stating so
-// 
+///accepts an optional token and checks the friend status of the requester to the user
+///if the profile is set to private return info stating so
 pub async fn get_profile(
     Extension(pool): Extension<PgPool>,
     query_params: Option<Query<Value>>,
@@ -48,7 +47,7 @@ pub async fn get_profile(
         })))
     }
     //validate friendsship status
-
+    todo!();
     //validate profile vis
 
     //get recent games
@@ -73,6 +72,7 @@ pub async fn get_games(
 
 ) -> Result<Json<Value>, String> {
 
+    todo!();
     return Ok(Json(json!("none")));
 }
 
@@ -80,6 +80,7 @@ pub async fn get_achievements(
 
 ) -> Result<Json<Value>, String> {
 
+    todo!();
     return Ok(Json(json!("none")));
 }
 
@@ -87,5 +88,6 @@ pub async fn get_player_stats(
 
 ) -> Result<Json<Value>, String> {
 
+    todo!();
     return Ok(Json(json!("none")));
 }
