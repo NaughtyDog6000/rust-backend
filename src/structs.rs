@@ -55,19 +55,15 @@ pub struct FriendRecord {
 
 // -- enums --
 
-#[derive(Debug, Serialize, PartialEq, Eq)]
-pub enum FriendStatusEnum {
-    Friends,
-    UserRequested,
-    TargetRequested,
+#[derive(Debug, Serialize)]
+// #[derive(Debug, Serialize, PartialEq, Eq)]
+pub enum RelationshipStatusEnum {
+    Friends(FriendRecord),
+    UserRequested(FriendRequest),
+    TargetRequested(FriendRequest),
     Unrelated,
-    Error
 }
 
-pub enum RelationshipRecordEnum {
-    Friend (FriendRecord),
-    FriendRequest (FriendRequest),
-}
 
 // -- END OF enums --
 

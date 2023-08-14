@@ -11,11 +11,14 @@ use axum::{
 
 use chrono::NaiveDate;
 use log::{warn, info, trace, error};
+use log4rs::encode::json;
 use serde::Deserialize;
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::{utils::{check_token, get_user, check_password_regex, get_friend_status, add_or_accept_friend}, structs::{User, FriendRecord, FriendRequest, FriendStatusEnum}};
+use crate::{utils::{check_token, get_user, check_password_regex, get_friend_status, add_or_accept_friend},
+ structs::{User, FriendRecord, FriendRequest, RelationshipStatusEnum, }};
+use crate::errors::CustomErrors;
 
 /// ## contains the routes for getting and managing relationships between users<br>
 /// "friends/add" - adds or sends a friend request to the user passed<br>
@@ -34,7 +37,7 @@ pub fn router() -> Router {
     .route("/friends/status/all", get(|| async {"look at how many there are(n't)"}).post(|| async {"TBD"}))
 
     //gets the status of the friendship or friend request between yourself and another user
-    .route("/friends/status", get(friend_status).post(|| async {"why even check, we all know you aint got no friends"}))
+    .route("/friends/status", get(friend_status).post(friend_status))
 }
 
 // sending friend requests and accepting friend requests can be done through the add route 
@@ -45,7 +48,7 @@ pub struct UserQueryParameters {
     username: String,
 }
 
-/// gets the 
+/// gets the status of one user relative to the user requesting it 
 pub async fn friend_status(
     Extension(pool): Extension<PgPool>,
     headers: HeaderMap,
@@ -104,56 +107,62 @@ pub async fn friend_status(
     // log the user making the request
     info!("user: {}, requested to access {}'s status", requesting_user.username, requested_user.username);
 
-    let response_friend_status = get_friend_status(
+    let relationship_status = get_friend_status(
         &pool,
         requesting_user.id, 
         requested_user.id
         ).await;
     
-    if response_friend_status.is_err() {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
-            "response": "friend status could not be gathered"
-        })));
+    if relationship_status.is_err() {
+        match relationship_status.unwrap_err() {
+            // CustomErrors::SQLXError(_) => todo!(),
+            // CustomErrors::UserDoesNotExist { unknown_user } => todo!(),
+            // CustomErrors::RequestingSelf => todo!(),
+            // CustomErrors::LogicError => todo!(),
+            _ => {
+                return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+                    "response": "friend status could not be gathered"
+                })));
+            }
+        }
+
     }
 
-    let friend_status = response_friend_status.unwrap();
-    
-    if friend_status.record.is_some() {
-        // if friend Record is returned
+        match relationship_status.unwrap() {
+            RelationshipStatusEnum::Friends(friend_record) => {
+                return (StatusCode::OK, Json(json!({
+                    "response": "success",
+                    "relationship": "Friends",
+                    "details": friend_record
+                })))
+            },
+            RelationshipStatusEnum::UserRequested(friend_request) => {
+                return (StatusCode::OK, Json(json!({
+                    "response": "success",
+                    "relationship": "Request Sent",
+                    "details": friend_request
+                })))
+            },
+            RelationshipStatusEnum::TargetRequested(friend_request) => 
+            {
+                return (StatusCode::OK, Json(json!({
+                    "response": "success",
+                    "relationship": "Request Received",
+                    "relationship": friend_request
+                })))
+            },
+            RelationshipStatusEnum::Unrelated => {
+                return (StatusCode::OK, Json(json!({
+                    "response": "success",
+                    "relationship": "None",
+                
+                })))
+            },
+        }
 
-        let friendship: FriendRecord = friend_status.record.unwrap();
-        info!("{:?}", friendship.acceptance_timestamp.to_string());
-        return (StatusCode::OK, Json(json!({
-            "response": "success",
-            "relation": "friends",
-            "details": friendship,
 
-        })));
-
-    } else if friend_status.request.is_some() {
-        // if friend request is returned
-        let friend_request: FriendRequest = friend_status.request.unwrap();
-
-        return (StatusCode::OK, Json(json!({
-            "response": "friend request between the two users found",
-            "relation": "requested",
-            "details": friend_request
-
-        })))
-
-    } else {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
-            "response": "an error in fetching a friend request or friendship occured, this may be as 
-            there is no relationship between you and the user requested",
-            "relation": null,
-            "details": null,
-        })));
-    }
-
-    (StatusCode::OK, Json(json!({
-        "response": "success",
-    })))
 }
+
 
 /// route used to send or accept a friend request<br>
 /// accepts the username passed through either:<br>
@@ -215,24 +224,26 @@ pub async fn add_or_accept_friend_route(
     }
     let requested_user: User = requested_user_response.unwrap();
 
-    let status: Result<FriendStatusEnum, String> = add_or_accept_friend(&pool, requesting_user.id, requested_user.id).await;
-    if status.is_err() {
+    let status = add_or_accept_friend(&pool, requesting_user.id, requested_user.id).await;
 
-        let status: String = status.unwrap_err();
-        return (StatusCode::OK, Json(json!({
-            "response": "error",
-            "details": status,
-        })));
+    match status {
+        Ok(_) => {
+            return (StatusCode::OK, Json(json!({
+                "response": "success",
+            })));
+        },
+        Err(error) => {
+            let error = error.to_string();
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+                "response": "error",
+                "details": error
+            })));
+        },
     }
-    let status = status.unwrap();
-
-
-    return (StatusCode::ACCEPTED, Json(json!({
-        "response": "success",
-        "status": status
-    })))
 }
 
+
+///Removes or declines the friend request/friendship of the user given
 pub async fn remove_or_decline_friend_route(
     Extension(pool): Extension<PgPool>,
     headers: HeaderMap,

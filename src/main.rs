@@ -4,6 +4,7 @@
 mod models;
 mod structs;
 mod utils;
+mod errors;
 
 use std::{fs::{*, self}, net::{SocketAddr, IpAddr, Ipv4Addr}, io::Write, path::Path};
 use serde_json::{json, Value};

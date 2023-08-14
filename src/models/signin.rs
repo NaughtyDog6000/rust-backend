@@ -7,8 +7,8 @@ use bcrypt::{verify, hash, DEFAULT_COST};
 use rand::Rng;
 use std::time::Duration;
 
-use crate::{utils::{get_user, create_session_token}, structs::User};
-
+use crate::{utils::{get_user, create_session_token}, structs::{User, Token}};
+use crate::errors::CustomErrors;
 
 #[derive(Deserialize)]
 pub struct SigninRequestParams {
@@ -54,11 +54,13 @@ pub async fn signin (
 
 
     // -- Create Token --
-    let token = create_session_token(&pool, user, None).await;
-    match token.is_err() {
-        true => return (StatusCode::BAD_REQUEST, Json(json!({"error in token creation": token}))),
-        false => (),
-        _ => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!("IDEK how this happened")))
+    let token: Result<String, CustomErrors> = create_session_token(&pool, user, None).await;
+    match token {
+        Err(error) => { return (StatusCode::BAD_REQUEST, Json(json!({
+            "response": "error",
+            "details": error.to_string()
+        })));},
+        _ => ()
     }
 
     let token = token.unwrap();

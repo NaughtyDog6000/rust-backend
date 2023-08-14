@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS friends
     creation_timestamp TIMESTAMP NOT NULL,
     acceptance_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT sender_id FOREIGN KEY (id) REFERENCES public.users (id),
-    CONSTRAINT receiver_id FOREIGN KEY (id) REFERENCES public.users (id) 
+    CONSTRAINT sender_id FOREIGN KEY (sender_id) REFERENCES public.users (id),
+    CONSTRAINT receiver_id FOREIGN KEY (receiver_id) REFERENCES public.users (id) 
 
 );
 
@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS friend_requests
     receiver_id bigint NOT NULL,
     creation_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT sender_id FOREIGN KEY (id) REFERENCES public.users (id),
-    CONSTRAINT receiver_id FOREIGN KEY (id) REFERENCES public.users (id) 
+    CONSTRAINT sender_id FOREIGN KEY (sender_id) REFERENCES public.users (id),
+    CONSTRAINT receiver_id FOREIGN KEY (receiver_id) REFERENCES public.users (id) 
 
 );
 
