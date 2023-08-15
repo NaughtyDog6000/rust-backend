@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::{structs::{User, Token}, utils::{check_token, get_user}};
+use crate::{structs::{User, Token}, utils::{check_token, get_user}, errors::handle_error};
 
 use super::signup::check_user_exists;
 
@@ -51,13 +51,17 @@ pub async fn delete_account(
 
 
 
-    
-    let user_req = get_user(&pool, None, None, Some(auth_token)).await;
+    let user: User;
+    let user_req_response = get_user(&pool, None, None, Some(auth_token)).await;
 
-    if user_req.is_err() {
-        return (StatusCode::BAD_REQUEST, Json(json!({"response": user_req.unwrap_err()})));
+    match user_req_response {
+        Ok(usr) => {
+            user = usr;
+        },
+        Err(error) => {
+            return handle_error(error);
+        }
     }
-    let user: User = user_req.unwrap();
 
     if request.username != user.username {
         return (StatusCode::BAD_REQUEST, Json(json!({"response": "username does not match user associated with token"})));

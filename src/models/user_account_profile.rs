@@ -13,7 +13,7 @@ use serde::Deserialize;
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::{utils::get_user, structs::User};
+use crate::{utils::get_user, structs::User, errors::handle_error};
 
 
 pub fn router() -> Router {
@@ -40,11 +40,9 @@ pub async fn get_profile(
 
 
     //validate token
-    let response: Result<User, String> =  get_user(&pool, None, None, Some(auth_token)).await;
+    let response =  get_user(&pool, None, None, Some(auth_token)).await;
     if response.is_err() {
-        return (StatusCode::BAD_REQUEST, Json(json!({
-            "response": "token error"
-        })))
+        return handle_error(response.unwrap_err());
     }
     //validate friendsship status
     todo!();

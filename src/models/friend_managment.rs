@@ -16,8 +16,8 @@ use serde::Deserialize;
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::{utils::{check_token, get_user, check_password_regex, get_friend_status, add_or_accept_friend},
- structs::{User, FriendRecord, FriendRequest, RelationshipStatusEnum, }};
+use crate::{utils::{check_token, get_user, check_password_regex, get_friend_status, add_or_accept_friend, remove_or_cancel_friend},
+ structs::{User, FriendRecord, FriendRequest, RelationshipStatusEnum, }, errors::handle_error};
 use crate::errors::CustomErrors;
 
 /// ## contains the routes for getting and managing relationships between users<br>
@@ -86,21 +86,22 @@ pub async fn friend_status(
 
 
     // -- validate token --
-    let response: Result<User, String> =  get_user(&pool, None, None, Some(auth_token)).await;
-    if response.is_err() {
-        return (StatusCode::BAD_REQUEST, Json(json!({
-            "response": "token error"
-        })))
+    let requesting_user: User;
+    let response = get_user(&pool, None, None, Some(auth_token)).await;
+    match response {
+        Ok(usr) => {
+            requesting_user = usr;
+        },
+        Err(error) => {
+            return handle_error(error);
+        },
     }
-    let requesting_user: User = response.unwrap();
 
 
     //get the user that is being requested
     let requested_user = get_user(&pool, None, Some(requested_username), None).await;
     if requested_user.is_err() {
-        return (StatusCode::BAD_REQUEST, Json(json!({
-            "response": "user does not exist"
-        })))
+        return handle_error(requested_user.unwrap_err());
     }
     let requested_user: User = requested_user.unwrap();
 
@@ -114,18 +115,7 @@ pub async fn friend_status(
         ).await;
     
     if relationship_status.is_err() {
-        match relationship_status.unwrap_err() {
-            // CustomErrors::SQLXError(_) => todo!(),
-            // CustomErrors::UserDoesNotExist { unknown_user } => todo!(),
-            // CustomErrors::RequestingSelf => todo!(),
-            // CustomErrors::LogicError => todo!(),
-            _ => {
-                return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
-                    "response": "friend status could not be gathered"
-                })));
-            }
-        }
-
+        return handle_error(relationship_status.unwrap_err());
     }
 
         match relationship_status.unwrap() {
@@ -218,9 +208,7 @@ pub async fn add_or_accept_friend_route(
     // -- get the user who is being requested to be added or friend requested
     let requested_user_response = get_user(&pool, None, Some(requested_username), None).await;
     if requested_user_response.is_err() {
-        return (StatusCode::BAD_REQUEST, Json(json!({
-            "response": "the user being requested does not exist"
-        })));
+        return handle_error(requested_user_response.unwrap_err());
     }
     let requested_user: User = requested_user_response.unwrap();
 
@@ -247,13 +235,54 @@ pub async fn add_or_accept_friend_route(
 pub async fn remove_or_decline_friend_route(
     Extension(pool): Extension<PgPool>,
     headers: HeaderMap,
-    Json(request): Json<UserQueryParameters>,
+    query_string: Option<Query<UserQueryParameters>>,
+    request: Option<Json<UserQueryParameters>>,
 ) -> (StatusCode, Json<Value>) {
+    // -- get token from headers -- 
+    let auth_token = headers.get("auth");
+    if auth_token.is_none() {
+        return (StatusCode::IM_A_TEAPOT, Json(json!({
+            "response": "token not present you melon"
+        })));
+    }
+    let auth_token: String = auth_token.unwrap().to_str().unwrap().to_owned(); 
 
+    // -- get the username of the person being added from body or query string --
+    let requested_username: String;
 
-    todo!();
+    if request.is_some() {
+    // -- try to get the user from the body 
+        requested_username = request.unwrap().username.to_string();
+    } else if query_string.is_some() {
+    // -- try to get user from the query string --
+        requested_username = query_string.unwrap().0.username;
+    } else {
+    // -- no username is provided so cannot proceed --
+        return (StatusCode::BAD_REQUEST, Json(json!({
+            "response": "no body or query string with username parameter provided"
+        })));
+    }
 
-    
+    let requested_user = get_user(&pool, None, Some(requested_username), None).await;
+    if requested_user.is_err() {
+        return handle_error(requested_user.unwrap_err());
+    }
+    let requested_user = requested_user.unwrap();
+
+    // -- get the user who made the request --
+    let request = get_user(&pool, None, None, Some(auth_token)).await; 
+    match request {
+        Err(_) => {
+            return (StatusCode::BAD_REQUEST, Json(json!({
+                "response": "bad token"
+            })))
+        },
+        _ => ()
+    }
+    let requesting_user = request.unwrap();
+
+    let resp = remove_or_cancel_friend(&pool, requesting_user.id, requested_user.id);
+
     return (StatusCode::NOT_IMPLEMENTED, Json(json!({
         "response": "this part of the API is incomplete"
     })))

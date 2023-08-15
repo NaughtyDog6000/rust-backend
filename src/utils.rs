@@ -29,7 +29,7 @@ pub async fn get_user(
     id: Option<i64>,
     username: Option<String>,
     token: Option<String>
-    ) -> Result<User, String> {
+    ) -> Result<User, CustomErrors> {
 
     let res: Result<User, sqlx::Error>;
 
@@ -49,7 +49,7 @@ pub async fn get_user(
 
         
         
-        if token_req.is_err() { return Err(String::from("Token could not be found in database or database encountered an error")); }
+        if token_req.is_err() { return Err(CustomErrors::TokenError); }
         let token_struct: Token  = token_req.unwrap();
 
         res = sqlx::query_as::<_,User>("SELECT * FROM users WHERE id = $1"
@@ -65,19 +65,19 @@ pub async fn get_user(
         .fetch_one(pool).await;
     
     } else {
-        return Err(String::from("nothing provided to get_user (all params are none)"));
+        return Err(CustomErrors::LogicError);
     }
 
 
-
-
-    if res.is_err() {
-        println!("{:?}", res);
-        return Err(String::from("Failed to fetch user"));
+    match res {
+        Ok(user) => {
+            return Ok(user); 
+        },
+        Err(error) => {
+            println!("{:?}", error);
+            return Err(CustomErrors::SQLXError(error));
+        },
     }
-
-    let user: User = res.unwrap();
-    return Ok(user); 
 }
 
 
@@ -394,7 +394,8 @@ pub async fn get_friend_status(
     }
 
     ///**THIS FUNCTION DOES NOT VERIFY THE VALIDITY OF THE USERS PASSED**<br>
-    ///if an error occurs it is returned as a string
+    ///This Function can return the following errors:<br>
+    /// SQLX, 
     pub async fn remove_or_cancel_friend(
         pool: &PgPool,
         user_id: i64, 
@@ -409,13 +410,9 @@ pub async fn get_friend_status(
         .bind(user_id)
         .bind(target_id)
         .execute(pool)
-        .await;
+        .await?;
     
-        if response.is_err() {
-            let error = response.unwrap_err(); 
-            println!("{}", error);
-            return  Err(CustomErrors::SQLXError(error));
-        }
+
 
         // -- decline/cancel (delete) friend request between the two users if exists --
         let response = sqlx::query("
@@ -425,13 +422,7 @@ pub async fn get_friend_status(
         .bind(user_id)
         .bind(target_id)
         .execute(pool)
-        .await;
-    
-        if response.is_err() {
-            let error = response.unwrap_err(); 
-            println!("{}", error);
-            return  Err(CustomErrors::SQLXError(error));
-        }
+        .await?;
 
         return Ok(());
     }

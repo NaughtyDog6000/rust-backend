@@ -14,7 +14,7 @@ use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
 use crate::{structs::{Score, User}, 
-            utils::{check_token, get_user, get_timestamp, get_datetime_utc}};
+            utils::{check_token, get_user, get_timestamp, get_datetime_utc}, errors::handle_error};
 
 
 #[derive(Deserialize)]
@@ -58,10 +58,9 @@ pub async fn leaderboard(
     let user: User;
 
     // -- extract user_id from token --
-    let result: Result<User, String> = get_user(&pool, None, None, Some(auth_token)).await;
+    let result = get_user(&pool, None, None, Some(auth_token)).await;
     if result.is_err() {
-        warn!("bad token use attempted");
-        return (StatusCode::BAD_REQUEST, Json(json!("bad token")))
+        return handle_error(result.unwrap_err());
     }
     let user: User = result.unwrap();
     // -- apply limitations (request spam & invalid scores check) -- 
