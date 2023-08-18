@@ -59,6 +59,10 @@ async fn main() -> Result<(), Box<dyn Error>>{
     // println!("{:?}", address_parts);
     // GIANT MESS
 
+    // -- Get the admin key --
+    let admin_key: String = dotenv::var("ADMINKEY").expect("could not get the admin key");
+
+
     let cors = CorsLayer::new().allow_origin(Any);
 
     let pool = PgPoolOptions::new()
@@ -67,6 +71,9 @@ async fn main() -> Result<(), Box<dyn Error>>{
         .await
         .expect("unable to connect to the Database :(")
         ;
+
+    
+
 
     // -- End Of Config --
 
@@ -83,6 +90,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
 
     let app = Router::new()
+    .fallback(page_not_found)
     .route("/", get(root_get).post(root_post))
     .route("/ping", get(|| async { Html("pong GET") } ).post(|| async { Html("PONG POST") } ))
     .merge(models::signup::router())
@@ -95,9 +103,15 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::update_account_data::router())
     .merge(models::delete_account::router())
     .merge(models::friend_managment::router())
+    .merge(models::achievements::router())
 
     .layer(cors)
+    .layer(Extension(admin_key))
     .layer(Extension(pool));
+
+    pub async fn page_not_found() -> axum::response::Html<&'static str> {
+        include_str!("./html/404.html").into()
+    }
 
     // -- create  server on socket/address 
 

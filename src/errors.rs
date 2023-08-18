@@ -37,12 +37,21 @@ UserDoesNotExist {
 #[error("an access token was missing or invalid")]    
 BadToken,
 
+#[error("the following params are missing: {missing_params}")]
+MissingQueryParams {
+    missing_params: String,
+},
+
 #[error("the user is requesting themself where that is not possible")]    
 RequestingSelf,
 
 #[error("an error occurred ¯\\_(ツ)_/¯")]    
 LogicError,
+
+#[error("this part of the API is not complete")]
+Unimplemented,
 }
+
 
 
 /// a function that when passed a "CustomErrors" Enum will return: <br>
@@ -79,6 +88,16 @@ pub fn handle_error(error: CustomErrors) -> (StatusCode, Json<Value>) {
         },
         CustomErrors::LogicError => {
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+                "response": error.to_string()
+            })));
+        },
+        CustomErrors::MissingQueryParams { missing_params } => {
+            return (StatusCode::BAD_REQUEST, Json(json!({
+                "rsponse": format!("the following params are missing: {}", missing_params)
+            })));
+        },
+        CustomErrors::Unimplemented => {
+            return (StatusCode::NOT_IMPLEMENTED, Json(json!({
                 "response": error.to_string()
             })));
         },

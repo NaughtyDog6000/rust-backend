@@ -221,11 +221,7 @@ pub async fn add_or_accept_friend_route(
             })));
         },
         Err(error) => {
-            let error = error.to_string();
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
-                "response": "error",
-                "details": error
-            })));
+            return handle_error(error);
         },
     }
 }
@@ -281,11 +277,21 @@ pub async fn remove_or_decline_friend_route(
     }
     let requesting_user = request.unwrap();
 
-    let resp = remove_or_cancel_friend(&pool, requesting_user.id, requested_user.id);
+    let resp = remove_or_cancel_friend(&pool, requesting_user.id, requested_user.id).await;
+    match resp {
+        Err(error) => {
+            return handle_error(error);
+        },
+        Ok(_) => {
+            return (StatusCode::OK, Json(json!({
+                "response": "success",
+                
+            })))
+        }
+    }
 
-    return (StatusCode::NOT_IMPLEMENTED, Json(json!({
-        "response": "this part of the API is incomplete"
-    })))
+
+
 }
 
 

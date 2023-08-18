@@ -8,3 +8,4 @@ pub mod signout;
 pub mod update_account_data;
 pub mod delete_account;
 pub mod friend_managment;
+pub mod achievements;
