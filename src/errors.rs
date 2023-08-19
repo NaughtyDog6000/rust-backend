@@ -50,6 +50,10 @@ LogicError,
 
 #[error("this part of the API is not complete")]
 Unimplemented,
+
+#[error("an error with the filesystem/file provided occured")]
+FileError,
+
 }
 
 
@@ -93,11 +97,16 @@ pub fn handle_error(error: CustomErrors) -> (StatusCode, Json<Value>) {
         },
         CustomErrors::MissingQueryParams { missing_params } => {
             return (StatusCode::BAD_REQUEST, Json(json!({
-                "rsponse": format!("the following params are missing: {}", missing_params)
+                "response": format!("the following params are missing: {}", missing_params)
             })));
         },
         CustomErrors::Unimplemented => {
             return (StatusCode::NOT_IMPLEMENTED, Json(json!({
+                "response": error.to_string()
+            })));
+        },
+        CustomErrors::FileError => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
                 "response": error.to_string()
             })));
         },

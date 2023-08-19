@@ -12,7 +12,7 @@ use tower_http::cors::{Any, CorsLayer};
 use sqlx::{postgres::PgPoolOptions, error::BoxDynError};
 
 use axum::{
-    extract::Extension,
+    extract::{Extension, DefaultBodyLimit},
     Router,
     routing::{get, post},
     response::Html, Json, http::{StatusCode, HeaderMap},
@@ -107,7 +107,9 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     .layer(cors)
     .layer(Extension(admin_key))
-    .layer(Extension(pool));
+    .layer(Extension(pool))
+    .layer(DefaultBodyLimit::max(1048576)); //1MB max size
+
 
     pub async fn page_not_found() -> axum::response::Html<&'static str> {
         include_str!("./html/404.html").into()

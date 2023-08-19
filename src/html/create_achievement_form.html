@@ -11,22 +11,26 @@
         
 
 
-        <form action="">
-            <label for="input_image">Image</label>
-            <input id="input_image" type="file" accept=".png, .jpg, .jpeg"><br>
+        <form action="" method="post" enctype="multipart/form-data">
+            <label for="input_admin_code">AdminCode</label>
+            <input id="input_admin_code" name="admin_code" type="password" placeholder="QLDIOPNEM<POJEIP(!%)"><br>
+            
+            
+            <label for="input_image">Image: max size 1mb</label>
+            <input id="input_image" name="icon" type="file" accept=".png"><br>
 
             <label for="input_name">Name</label>
-            <input id="input_name" type="text" placeholder="W is for me"><br>
+            <input id="input_name" name="name" type="text" placeholder="W is for me"><br>
 
             <label for="input_tier">Tier</label>
-            <input id="input_tier" type="number" min="0" max="5" value="0"><br>
+            <input id="input_tier" name="tier" type="number" min="0" max="5" value="0"><br>
 
             
             <label for="input_desc">Description</label>
-            <textarea name="dawd" id="input_desc" cols="30" rows="3" placeholder="Win a game"></textarea>
+            <textarea name="description" id="input_desc" cols="30" rows="3" placeholder="Win a game"></textarea>
 
             <br><br><br>
-            <input type="submit" value="create achievement" >
+            <input type="submit" value="create achievement">
             <input type="reset">
         </form>
     </div>

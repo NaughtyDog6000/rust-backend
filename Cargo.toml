@@ -10,6 +10,7 @@ axum = { version = "0.6.18", features = ["headers", "multipart"] } #web-framewor
 bcrypt = "0.15.0" #hashing
 chrono = { version = "0.4.26", features = ["serde"] }
 dotenv = "0.15.0" #reads .env file
+image = "0.24.7"
 log = "0.4.19" # dependancy for log4rs
 log4rs = "1.2.0" #logging to file
 rand = "0.8.5"
@@ -22,6 +23,7 @@ thiserror = "1.0.44"
 time = "0.3.23"
 tokio = { version = "1.29.1", features = ["full"] } #Runtime
 tower-http = { version = "0.4.1", features = ["cors"] } #CORS
+uuid = { version = "1.4.1", features = ["v4", "fast-rng",] } #universally unique identifier (never the same image file name)
 
 [dev-dependencies]
 criterion = "0.5.1"
