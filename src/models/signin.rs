@@ -22,12 +22,12 @@ pub struct SigninRequestParams {
 
 pub fn router() -> Router {
     Router::new().route("/signin",
-    post(signin).get(getSignin)
+    post(signin).get(get_signin)
 
     )
 }
 
-pub async fn getSignin()
+pub async fn get_signin()
 -> (StatusCode, Json<Value>) {
     return (StatusCode::BAD_REQUEST, 
         Json(json!({
