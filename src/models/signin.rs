@@ -22,8 +22,18 @@ pub struct SigninRequestParams {
 
 pub fn router() -> Router {
     Router::new().route("/signin",
-    post(signin).get(|| async {"This does NOT support get requests"})
+    post(signin).get(getSignin)
+
     )
+}
+
+pub async fn getSignin()
+-> (StatusCode, Json<Value>) {
+    return (StatusCode::BAD_REQUEST, 
+        Json(json!({
+             "response": "user does not exist"
+             }))
+    );
 }
 
 pub async fn signin (

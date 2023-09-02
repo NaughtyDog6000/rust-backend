@@ -14,7 +14,7 @@ use crate::errors::{handle_error, CustomErrors};
 pub fn router() -> Router {
     Router::new()
     .route("/admin/achievements/create", get(get_admin_create_achievement).post(admin_create_achievement))
-
+    .route("/achievements/unlock", post(|| async {"WIP"}))
 }
 
 pub async fn get_admin_create_achievement() -> axum::response::Html<&'static str> {
