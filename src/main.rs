@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     let app = Router::new()
     .fallback(page_not_found)
     .route("/", get(root_get).post(root_post))
-    .route("/ping", get(|| async { Html("pong GET") } ).post(|| async { Html("PONG POST") } ))
+    .route("/ping", get(ping_get).post(ping_post))
     .merge(models::signup::router())
     .merge(models::signin::router())
     .merge(models::test_token::router())
@@ -153,3 +153,24 @@ pub async fn root_get(
             "Time": get_timestamp()
         })))
     }
+
+pub async fn ping_post(
+    headers: HeaderMap
+    
+    ) -> (StatusCode, Json<Value>) {
+        println!("{:?}", headers);
+        return (StatusCode::OK, Json(json!({
+            "response": "pong POST",
+        })))
+    }
+
+pub async fn ping_get(
+    headers: HeaderMap
+
+) -> (StatusCode, Json<Value>) {
+    println!("{:?}", headers);
+    return (StatusCode::OK, Json(json!({
+        "response": "pong GET"
+    })))
+}
+    
