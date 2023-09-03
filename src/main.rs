@@ -66,8 +66,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     let cors = CorsLayer::new()
     .allow_methods([Method::GET, Method::POST])
     .allow_origin(Any)
-    .allow_headers(Any)
-    .allow_credentials(true);
+    .allow_headers(Any);
 
 
     let pool = PgPoolOptions::new()
