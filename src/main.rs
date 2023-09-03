@@ -63,7 +63,12 @@ async fn main() -> Result<(), Box<dyn Error>>{
     let admin_key: String = dotenv::var("ADMINKEY").expect("could not get the admin key");
 
 
-    let cors = CorsLayer::new().allow_methods([Method::GET, Method::POST]).allow_origin(Any);
+    let cors = CorsLayer::new()
+    .allow_methods([Method::GET, Method::POST])
+    .allow_origin(Any)
+    .allow_headers(Any)
+    .allow_credentials(true);
+
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
