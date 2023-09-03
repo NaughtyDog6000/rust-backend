@@ -8,14 +8,14 @@ mod errors;
 
 use std::{fs::{*, self}, net::{SocketAddr, IpAddr, Ipv4Addr}, io::Write, path::Path};
 use serde_json::{json, Value};
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{Any, CorsLayer, AllowMethods};
 use sqlx::{postgres::PgPoolOptions, error::BoxDynError};
 
 use axum::{
     extract::{Extension, DefaultBodyLimit},
     Router,
     routing::{get, post},
-    response::Html, Json, http::{StatusCode, HeaderMap},
+    response::Html, Json, http::{StatusCode, HeaderMap, Method},
 };
 
 use dotenv;
@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     let admin_key: String = dotenv::var("ADMINKEY").expect("could not get the admin key");
 
 
-    let cors = CorsLayer::new().allow_origin(Any);
+    let cors = CorsLayer::new().allow_methods([Method::GET, Method::POST]).allow_origin(Any);
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
