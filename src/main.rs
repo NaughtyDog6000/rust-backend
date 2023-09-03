@@ -105,7 +105,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::friend_managment::router())
     .merge(models::achievements::router())
 
-    // .layer(cors) -- for testing
+    .layer(cors) //-- for testing
     .layer(Extension(admin_key))
     .layer(Extension(pool))
     .layer(DefaultBodyLimit::max(1048576)); //1MB max size
