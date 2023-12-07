@@ -29,9 +29,9 @@ pub fn router() -> Router {
 
 pub async fn get_signin()
 -> (StatusCode, Json<Value>) {
-    return (StatusCode::BAD_REQUEST, 
+    return (StatusCode::NOT_IMPLEMENTED, 
         Json(json!({
-             "response": "user does not exist"
+             "response": "this route is intended to only be accessed via POST requests"
              }))
     );
 }
