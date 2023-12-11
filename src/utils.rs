@@ -85,7 +85,7 @@ pub async fn get_user(
 
 pub async fn create_session_token(
     pool: &PgPool,
-    user: User,
+    user: &User,
     expires_hours: Option<i32>
     ) -> Result<String, CustomErrors> {
 

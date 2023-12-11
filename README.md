@@ -10,8 +10,12 @@ it will include: **Accounts**, Player **Achievements** (if I get round to it), *
 **DB** - [] Atomic so there is no chance of a crash or error causing unexpected behavior  
 **access token** - send/recieve to browser/application
 
+new list:
+
+[ ] - route for (non-private) user info (/who_am_i) (username, highscore, most recent game, etc)
+
 ### Small notes
 
-**cargo run** - runs the server **without** migrating the DB first<br>
-**cargo run migrate** - migrates the server then runs<br>
-**build documentation** cargo doc --no-deps<br>
+**cargo run** - runs the server **without** migrating the DB first
+**cargo run migrate** - migrates the server then runs
+**build documentation** cargo doc --no-deps

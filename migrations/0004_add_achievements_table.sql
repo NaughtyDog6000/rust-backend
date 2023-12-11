@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS achievement_unlocks
 
 
   CONSTRAINT user_id FOREIGN KEY (user_id) REFERENCES public.users (id),
-  CONSTRAINT achievement_id FOREIGN KEY (achievement_id) REFERENCES public.achievements (achievement_id),
+  CONSTRAINT achievement_id FOREIGN KEY (achievement_id) REFERENCES public.achievements (id)
 );

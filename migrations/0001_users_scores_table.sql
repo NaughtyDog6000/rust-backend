@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     epoch_signup_time BIGINT NOT NULL,
-    date_of_birth DATE
+    date_of_birth DATE,
+    is_admin BOOLEAN DEFAULT false
 );
 
 CREATE TABLE IF NOT EXISTS scores (

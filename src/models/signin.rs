@@ -46,7 +46,7 @@ pub async fn signin (
     let username: String = username.unwrap(); 
 
     //find the user account with the username
-    let user: User = match get_user(&pool, None, Some(username), None).await {
+    let mut user: User = match get_user(&pool, None, Some(username), None).await {
         Ok(user) => user,
         Err(error) => {
             
@@ -64,7 +64,7 @@ pub async fn signin (
 
 
     // -- Create Token --
-    let token: Result<String, CustomErrors> = create_session_token(&pool, user, None).await;
+    let token: Result<String, CustomErrors> = create_session_token(&pool, &user, None).await;
     match token {
         Err(error) => { return (StatusCode::BAD_REQUEST, Json(json!({
             "response": "error",
@@ -87,7 +87,9 @@ pub async fn signin (
     match pass_correct {
         true => {
             return (StatusCode::OK, Json(json!({
-                "token": token
+                "token": token,
+                "username": user.username,
+                "isAdmin": false
             })));
         }
         false => {    
