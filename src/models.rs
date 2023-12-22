@@ -9,3 +9,8 @@ pub mod update_account_data;
 pub mod delete_account;
 pub mod friend_managment;
 pub mod achievements;
+
+// web routes
+
+// pub mod web_leaderboard;
+pub mod web_routes;

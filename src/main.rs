@@ -108,6 +108,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::delete_account::router())
     .merge(models::friend_managment::router())
     .merge(models::achievements::router())
+    .merge(models::web_routes::leaderboard_web::router())
 
     .layer(cors) //-- for testing
     .layer(Extension(admin_key))

@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-
+use serde::Deserialize;
 use axum::{
     Extension, Json, Router,
     routing::{get, post},
@@ -12,7 +12,7 @@ use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct LeaderboardWebQueryStringParams {
     length: usize,
     offset: usize,
