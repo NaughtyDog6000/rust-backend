@@ -23,3 +23,7 @@ key.txt
 
 #template file I made to copy the repetative stuff from
 MOCK.rs
+
+.vscode/
+
+.log
