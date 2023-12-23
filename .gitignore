@@ -16,7 +16,8 @@ Cargo.lock
 .env
 
 #Logging Files
-/Logging
+logging/
+*.log
 
 #JWT Key
 key.txt
@@ -25,5 +26,3 @@ key.txt
 MOCK.rs
 
 .vscode/
-
-.log

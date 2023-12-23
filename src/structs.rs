@@ -53,6 +53,7 @@ pub struct FriendRecord {
 
 // -- END OF TABLES --
 
+
 // -- enums --
 
 #[derive(Debug, Serialize)]
@@ -64,6 +65,24 @@ pub enum RelationshipStatusEnum {
     Unrelated,
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub enum VisibilityEnum {
+    Private,
+    FriendsOnly,
+    Public,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub enum GamemodeEnum {
+    Default,
+    Harcore,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub enum OrderByEnum {
+    Score,
+    MostRecent,
+}
 
 // -- END OF enums --
 

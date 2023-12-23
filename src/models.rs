@@ -13,4 +13,4 @@ pub mod achievements;
 // web routes
 
 // pub mod web_leaderboard;
-pub mod web_routes;
+pub mod scores;

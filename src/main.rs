@@ -8,6 +8,7 @@ mod errors;
 
 use std::{fs::{*, self}, net::{SocketAddr, IpAddr, Ipv4Addr}, io::Write, path::Path};
 use serde_json::{json, Value};
+use structs::VisibilityEnum;
 use tower_http::cors::{Any, CorsLayer, AllowMethods};
 use sqlx::{postgres::PgPoolOptions, error::BoxDynError};
 
@@ -29,13 +30,13 @@ use crate::utils::get_timestamp;
 async fn main() -> Result<(), Box<dyn Error>>{
     println!("intialising");
     
-        //Logging file
-        log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-        // trace!("detailed tracing info on your mothers maiden name");
-        // debug!("debug info");
-        // info!("relevant general info");
-        // warn!("this may be bad, you should take a look");
-        // error!("guys you whould come take a look, something *Really* bads just happened");
+    //Logging file
+    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+    // trace!("detailed tracing info on your mothers maiden name");
+    // debug!("debug info");
+    // info!("relevant general info");
+    // warn!("this may be bad, you should take a look");
+    // error!("guys you whould come take a look, something *Really* bads just happened");
     
     
     let args: Vec<String> = std::env::args().collect();
@@ -108,7 +109,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::delete_account::router())
     .merge(models::friend_managment::router())
     .merge(models::achievements::router())
-    .merge(models::web_routes::leaderboard_web::router())
+    .merge(models::scores::leaderboard_web::router())
 
     .layer(cors) //-- for testing
     .layer(Extension(admin_key))

@@ -25,7 +25,7 @@ pub struct LeaderboardQueryStringParams {
 // as u can guess it is the default value should it be undefined
 impl Default for LeaderboardQueryStringParams {
     fn default() -> Self {
-        Self { length: 10, offset: 0}
+        Self { length: 10, offset: 0 }
     }
 }
 

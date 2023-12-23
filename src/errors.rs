@@ -54,6 +54,8 @@ Unimplemented,
 #[error("an error with the filesystem/file provided occured")]
 FileError,
 
+#[error("the user requested more data from the api at one time than they are allowed to")]
+RequestAmount,
 }
 
 
@@ -98,6 +100,11 @@ pub fn handle_error(error: CustomErrors) -> (StatusCode, Json<Value>) {
         CustomErrors::MissingQueryParams { missing_params } => {
             return (StatusCode::BAD_REQUEST, Json(json!({
                 "response": format!("the following params are missing: {}", missing_params)
+            })));
+        },
+        CustomErrors::RequestAmount => {
+            return (StatusCode::PAYLOAD_TOO_LARGE, Json(json!({
+                "response": error.to_string()
             })));
         },
         CustomErrors::Unimplemented => {
