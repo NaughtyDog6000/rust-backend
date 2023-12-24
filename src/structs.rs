@@ -78,6 +78,15 @@ pub enum GamemodeEnum {
     Harcore,
 }
 
+impl ToString for GamemodeEnum {
+    fn to_string(&self) -> String {
+        match self {
+            GamemodeEnum::Default => String::from("Default"),
+            GamemodeEnum::Harcore => String::from("Hardcore"),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum OrderByEnum {
     Score,

@@ -11,7 +11,7 @@ use axum::{
 use sqlx::{pool, PgPool, postgres::PgRow};
 use serde_json::{json, Value};
 
-use crate::{structs::{VisibilityEnum, GamemodeEnum, OrderByEnum, User}, utils::check_token, errors::{handle_error, CustomErrors}};
+use crate::{structs::{VisibilityEnum, GamemodeEnum, OrderByEnum, User}, utils::{check_token, self, get_timestamp}, errors::{handle_error, CustomErrors}};
 
 const SIGNED_IN_USER_RECORD_MAX: i32 = 50;
 const ANONYMOUS_USER_RECORD_MAX: i32 = 10; 
@@ -27,11 +27,14 @@ const ANONYMOUS_USER_RECORD_MAX: i32 = 10;
 #[derive(Debug, Deserialize)]
 pub struct LeaderboardQueryStringParams {
     visibility: VisibilityEnum,
+    uploaded_after: i64, 
+    uploaded_before: i64, 
     game_mode: GamemodeEnum,
-    page_length: i32,
-    page_offset: i32,
     order_by: OrderByEnum,
     order_ascending: bool,
+
+    page_length: i32,
+    page_offset: i32,
 }
 
 impl Default for LeaderboardQueryStringParams {
@@ -42,7 +45,9 @@ impl Default for LeaderboardQueryStringParams {
             visibility: VisibilityEnum::Public, 
             game_mode: GamemodeEnum::Default, 
             order_by: OrderByEnum::Score, 
-            order_ascending: false  
+            order_ascending: false,  
+            uploaded_after: 0,
+            uploaded_before: get_timestamp(),
         }
     }
 }
@@ -56,6 +61,24 @@ struct LeaderboardRecord {
     pub score: i32,
     pub game_mode: String,
 }
+
+/// the total records meeting the current filters
+#[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
+struct TotalRecords {
+    pub total_records: i64,
+}
+
+
+struct LeaderboardResponseStruct {
+    pub time_sent: i64,
+    pub page_length: i32,
+    pub page_offset: i32,
+    pub total_records: i32,
+    pub records: Vec<LeaderboardRecord>,
+
+}
+
+
 pub fn router() -> Router {
     Router::new().route("/scores",
         get(leaderboard_web)
@@ -123,17 +146,36 @@ pub async fn leaderboard_web(
         users.username
     FROM scores
     JOIN users ON scores.user_id = users.id
+    WHERE 
+        scores.game_mode = $1 AND
+        scores.epoch_upload_time BETWEEN $2 AND $3 
     ORDER BY scores.score DESC
-    LIMIT 10 OFFSET 0;
+    LIMIT $4 OFFSET $5;
 
      ")
+    .bind(&query_params.game_mode.to_string())
+    .bind(&query_params.uploaded_after)
+    .bind(&query_params.uploaded_before)
+    .bind(&query_params.page_length)
+    .bind(&query_params.page_offset)
     .fetch_all(&pool)
     .await;
     if res.is_err() { return handle_error(CustomErrors::SQLXError(res.unwrap_err())); }
-    let response = res.unwrap();
+    let records = res.unwrap();
 
 
-    println!("{:#?}", response);
+    let res = sqlx::query_as::<_, TotalRecords>("
+    SELECT COUNT(*) AS total_records
+    FROM scores
+    JOIN users ON scores.user_id = users.id;
+    ").fetch_one(&pool).await;
+    if res.is_err() {return handle_error(CustomErrors::SQLXError(res.unwrap_err())); }
 
-    return (StatusCode::OK, Json(json!(response)));
+    let total_records = res.unwrap();
+    println!("{:#?}, \ntotal records {:#?}", records, total_records);
+
+    return (StatusCode::OK, Json(json!({
+        "total_records": total_records,
+        "page_records": records,
+    })));
 }

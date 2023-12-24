@@ -10,14 +10,15 @@ use sqlx::{pool, PgPool, database::HasValueRef, Error,};
 use axum::{Extension, Json, http::StatusCode, headers::Expires, extract::FromRequest};
 
 // -- Timestamp/Datetime --
+
 pub fn get_datetime_utc() -> NaiveDateTime {
     return Utc::now().naive_utc();
 }
 
+/// gets the time in seconds since the unix epoch (jan 1st 1970) as an i64
 pub fn get_timestamp() -> i64 {
     let now = SystemTime::now();
     let time_since_epoch = now.duration_since(UNIX_EPOCH).expect("time did a fucky wucky");
-    // println!("new signup at: {}", time_since_epoch.as_secs());
     time_since_epoch.as_secs() as i64
 }
 
