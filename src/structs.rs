@@ -93,6 +93,16 @@ pub enum OrderByEnum {
     MostRecent,
 }
 
+
+impl ToString for OrderByEnum {
+    fn to_string(&self) -> String {
+        match self {
+            OrderByEnum::MostRecent => String::from("scores.epoch_upload_time"),
+            OrderByEnum::Score => String::from("scores.score"),
+        }
+    }
+}
+
 // -- END OF enums --
 
 

@@ -1,8 +1,7 @@
 use std::{fmt::Debug, collections::HashMap};
 use serde::{Deserialize, Serialize};
 use axum::{
-    Extension, Json, Router,
-    routing::{get, post},
+    Extension, Json,
     http::{StatusCode, HeaderMap},
     response::{IntoResponse, Response},
     extract::Query
@@ -25,7 +24,7 @@ const ANONYMOUS_USER_RECORD_MAX: i32 = 10;
 
 
 #[derive(Debug, Deserialize)]
-pub struct LeaderboardQueryStringParams {
+pub struct LeaderboardQueryParams {
     visibility: VisibilityEnum,
     uploaded_after: i64, 
     uploaded_before: i64, 
@@ -37,7 +36,7 @@ pub struct LeaderboardQueryStringParams {
     page_offset: i32,
 }
 
-impl Default for LeaderboardQueryStringParams {
+impl Default for LeaderboardQueryParams {
     fn default() -> Self {
         Self { 
             page_length: 10, 
@@ -79,22 +78,15 @@ struct LeaderboardResponseStruct {
 }
 
 
-pub fn router() -> Router {
-    Router::new().route("/scores",
-        get(leaderboard_web)
-        .post(|| async {"This does NOT support POST requests"})
-    )
-}
-
-///
 /// 
 pub async fn leaderboard_web(
     Extension(pool): Extension<PgPool>,
     headers: HeaderMap,
-    query_params: Option<Query<LeaderboardQueryStringParams>>,
+    Json(query_params): Json<Option<LeaderboardQueryParams>>
+    
 ) -> (StatusCode, Json<Value>) {
+    let query_params = query_params.unwrap_or_default();
 
-    let Query(query_params) = query_params.unwrap_or_default();
 
     let auth_header = headers.get("auth");
     if auth_header.is_none() {
@@ -131,10 +123,13 @@ pub async fn leaderboard_web(
     } 
 
     // if change the order by depending on if the request is for ascending or decending order
-    let mut order: String = String::from("DESC");
+    let mut order_direction: String = String::from("DESC");
     if query_params.order_ascending {
-        order = String::from("ASC");
+        order_direction = String::from("ASC");
     }
+
+    let order_condition = format!("{} {}", query_params.order_by.to_string(), order_direction);
+    println!("{}", order_condition);
 
     let res = sqlx::query_as::<_, LeaderboardRecord>("
     SELECT 
@@ -149,13 +144,14 @@ pub async fn leaderboard_web(
     WHERE 
         scores.game_mode = $1 AND
         scores.epoch_upload_time BETWEEN $2 AND $3 
-    ORDER BY scores.score DESC
-    LIMIT $4 OFFSET $5;
+    ORDER BY $4
+    LIMIT $5 OFFSET $6;
 
      ")
     .bind(&query_params.game_mode.to_string())
     .bind(&query_params.uploaded_after)
     .bind(&query_params.uploaded_before)
+    .bind(&order_condition)
     .bind(&query_params.page_length)
     .bind(&query_params.page_offset)
     .fetch_all(&pool)
@@ -175,7 +171,7 @@ pub async fn leaderboard_web(
     println!("{:#?}, \ntotal records {:#?}", records, total_records);
 
     return (StatusCode::OK, Json(json!({
-        "total_records": total_records,
+        "total_records": total_records.total_records,
         "page_records": records,
     })));
 }
