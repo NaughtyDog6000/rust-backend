@@ -20,12 +20,6 @@ use crate::{utils::{check_token, get_user, check_password_regex}, structs::User}
 
 const HASHING_ROUNDS: u32 = 8;
 
-pub fn router() -> Router {
-    Router::new()
-    .route("/account/update/date_of_birth", get(|| async {"to update send token & a date string formatted: YY-MM-DD or YYYY-M-D etc"}).post(add_date_of_birth))
-    .route("/account/update/password", get(|| async {"to update password send token & new password in body of a POST request"}).post(update_password)
-    )
-}
 
 #[derive(Deserialize)]
 pub struct UpdateDOBParams {

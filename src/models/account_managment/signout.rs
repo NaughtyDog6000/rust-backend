@@ -19,15 +19,13 @@ use serde_json::{json, Value};
 
 use crate::utils::{get_user, check_token, get_timestamp};
 
-use super::leaderboard::LeaderboardQueryStringParams;
 
 
 
 
 pub fn router() -> Router {
     Router::new()
-    .route("/signout_all", get(|| async {"this is not done"}).post(signout_all))
-    .route("/signout", get(|| async {"This route is incomplete"}).post(signout))
+
         
     
 

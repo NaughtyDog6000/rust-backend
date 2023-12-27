@@ -98,18 +98,11 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .fallback(page_not_found)
     .route("/", get(root_get).post(root_post))
     .route("/ping", get(ping_get).post(ping_post))
-    .merge(models::signup::router())
-    .merge(models::signin::router())
-    .merge(models::test_token::router())
+
     .merge(models::leaderboard::router())
-    .merge(models::upload_score::router())
-    .merge(models::user_account_profile::router())
-    .merge(models::signout::router())
-    .merge(models::update_account_data::router())
-    .merge(models::delete_account::router())
-    .merge(models::friend_managment::router())
-    .merge(models::achievements::router())
-    .merge(models::scores::router())
+    .merge(models::account_managment::router())
+    .merge(models::profile_managment::router())
+    .merge(models::_old_routes::router())
 
     .layer(cors) //-- for testing
     .layer(Extension(admin_key))

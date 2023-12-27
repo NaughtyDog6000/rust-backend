@@ -29,14 +29,7 @@ impl Default for LeaderboardQueryStringParams {
     }
 }
 
-pub fn router() -> Router {
-    Router::new().route("/scores/global",
-        get(leaderboard)
-        .post(|| async {"This does NOT support POST requests"})
-    )
-}
-
-pub async fn leaderboard(    
+pub async fn leaderboard_old(    
     Extension(pool): Extension<PgPool>,
     headers: HeaderMap,
     query_params: Option<Query<LeaderboardQueryStringParams>>,

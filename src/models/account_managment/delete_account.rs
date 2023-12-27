@@ -16,17 +16,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::{structs::{User, Token}, utils::{check_token, get_user}, errors::handle_error};
+use crate::{structs::{User, Token}, utils::{check_token, get_user, check_user_exists}, errors::handle_error};
 
-use super::signup::check_user_exists;
-
-
-pub fn router() -> Router {
-    Router::new().route("/profile/delete_me",
-        get(delete_account)
-        .post(delete_account)
-    )
-}
 
 #[derive(Serialize, Deserialize)]
 pub struct DeleteAccountParams {

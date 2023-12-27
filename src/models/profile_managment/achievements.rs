@@ -13,12 +13,11 @@ use crate::errors::{handle_error, CustomErrors};
 
 pub fn router() -> Router {
     Router::new()
-    .route("/admin/achievements/create", get(get_admin_create_achievement).post(admin_create_achievement))
-    .route("/achievements/unlock", post(|| async {"WIP"}))
+
 }
 
 pub async fn get_admin_create_achievement() -> axum::response::Html<&'static str> {
-    include_str!("../html/create_achievement_form.html").into()
+    include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/src/html/create_achievement_form.html")).into()
 }
 
 #[derive(Debug)]
@@ -30,7 +29,7 @@ struct Achievement {
 }
 
 
-async fn admin_create_achievement(
+pub async fn admin_create_achievement(
     Extension(pool): Extension<PgPool>,
     Extension(admin_key): Extension<String>,
     headers: HeaderMap,

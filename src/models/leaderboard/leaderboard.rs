@@ -79,7 +79,7 @@ struct LeaderboardResponseStruct {
 
 
 /// 
-pub async fn leaderboard_web(
+pub async fn leaderboard(
     Extension(pool): Extension<PgPool>,
     headers: HeaderMap,
     Json(query_params): Json<Option<LeaderboardQueryParams>>

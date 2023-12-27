@@ -11,13 +11,7 @@ use sqlx::{pool, PgPool, postgres::PgAdvisoryLockKey};
 use bcrypt::{hash, DEFAULT_COST,};
 
 use crate::structs::{build_user, User};
-use crate::utils::{check_password_regex, check_username_regex, get_timestamp};
-
-pub fn router() -> Router {
-    Router::new().route("/signup",
-    get(|| async {"This does NOT support get requests"}).post(create_user)
-    )
-}
+use crate::utils::{check_password_regex, check_username_regex, get_timestamp, check_user_exists, };
 
 // static USERNAME_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[0-9A-Za-z_]+$").unwrap());
 
@@ -137,22 +131,4 @@ pub async fn create_user(
     })))
 }
 
-pub async fn check_user_exists(username: &String, pool: &PgPool) -> bool {
-    let query_res = sqlx::query(
-        "SELECT id, epoch_signup_time FROM users WHERE username = $1"
-    )
-    .bind(&username)
-    .fetch_optional(pool).await;
 
-    if query_res.is_err() {
-        error!("query returned an error");
-        return false;
-    }
-
-    if query_res.unwrap().is_some()
-    {
-        return true;
-    } else {
-        return false;
-    }
-}

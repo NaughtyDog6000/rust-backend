@@ -6,18 +6,6 @@ use sqlx::{pool, PgPool};
 
 use crate::{utils::{check_token, get_user}, structs::User};
 
-
-
-
-pub fn router() -> Router {
-    Router::new().route("/test_token",
-    get(|| async {"This does NOT support get requests"}).post(test_token)
-    )
-}
-
-
-
-
 pub async fn test_token(
     Extension(pool): Extension<PgPool>,
     headers: HeaderMap

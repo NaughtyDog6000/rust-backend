@@ -13,12 +13,7 @@ use serde::Deserialize;
 use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
 
-use crate::{utils::get_user, structs::User, errors::handle_error};
-
-
-pub fn router() -> Router {
-    Router::new().route("/profile", get(|| async {"this is not done"}).post(|| async {"This does NOT support POST requests"}))
-}
+use crate::{utils::get_user, structs::User, errors::{handle_error, CustomErrors}};
 
 //if no query string params are provided, it returns the user making the request's profile
 
@@ -58,9 +53,7 @@ pub async fn get_profile(
 
 
 
-    return (StatusCode::OK, Json(json!({
-    "response" : "NOT IMPLEMENTED"
-    })))
+    return handle_error(CustomErrors::Unimplemented);
 }
 
 

@@ -17,16 +17,6 @@ pub struct SigninRequestParams {
     password: String
 }
 
-
-
-
-pub fn router() -> Router {
-    Router::new().route("/signin",
-    post(signin).get(get_signin)
-
-    )
-}
-
 pub async fn get_signin()
 -> (StatusCode, Json<Value>) {
     return (StatusCode::NOT_IMPLEMENTED, 

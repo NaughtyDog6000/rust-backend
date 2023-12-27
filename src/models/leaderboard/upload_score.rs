@@ -25,14 +25,8 @@ pub struct UploadScoreRequestParams {
     epoch_game_end_time: i64,
 }
 
-pub fn router() -> Router {
-    Router::new().route("/scores/upload",
-        get(|| async {"this [POST] route is for uploading your game stats to the leaderboard"})
-        .post(leaderboard)
-    )
-}
 
-pub async fn leaderboard(    
+pub async fn upload_score(    
     Extension(pool): Extension<PgPool>,
     headers: HeaderMap,
     Json(request): Json<UploadScoreRequestParams>,

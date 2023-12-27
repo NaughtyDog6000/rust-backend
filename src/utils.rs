@@ -81,6 +81,26 @@ pub async fn get_user(
     }
 }
 
+pub async fn check_user_exists(username: &String, pool: &PgPool) -> bool {
+    let query_res = sqlx::query(
+        "SELECT id, epoch_signup_time FROM users WHERE username = $1"
+    )
+    .bind(&username)
+    .fetch_optional(pool).await;
+
+    if query_res.is_err() {
+        error!("query returned an error");
+        return false;
+    }
+
+    if query_res.unwrap().is_some()
+    {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 
 // -- Token Creation/Validation --
 
