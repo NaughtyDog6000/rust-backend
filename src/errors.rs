@@ -56,9 +56,13 @@ FileError,
 
 #[error("the user requested more data from the api at one time than they are allowed to")]
 RequestAmount,
+
+#[error("this route is for GET requests only")]
+GETONLYRoute,
+
+#[error("this route is for POST requests only")]
+POSTONLYRoute,
 }
-
-
 
 /// a function that when passed a "CustomErrors" Enum will return: <br>
 /// the appropriate statuscode & the json response of the error, Wrapped into a tupple<br>
@@ -116,6 +120,16 @@ pub fn handle_error(error: CustomErrors) -> (StatusCode, Json<Value>) {
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
                 "response": error.to_string()
             })));
+        },
+        CustomErrors::GETONLYRoute => { 
+            return (StatusCode::METHOD_NOT_ALLOWED, Json(json!({
+                "response": error.to_string()
+            })))
+        },
+        CustomErrors::POSTONLYRoute => {
+            return (StatusCode::METHOD_NOT_ALLOWED, Json(json!({
+                "response": error.to_string()
+            })))
         },
     }
 }
