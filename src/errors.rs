@@ -37,6 +37,12 @@ UserDoesNotExist {
 #[error("an access token was missing or invalid")]    
 BadToken,
 
+#[error("this route is for signed in users only, please provide the auth token in the header")]
+RequiresAuthorisation,
+
+#[error("this route is for administrators only and is not intended for users to access")]
+AdminOnly,
+
 #[error("the following params are missing: {missing_params}")]
 MissingQueryParams {
     missing_params: String,
@@ -128,6 +134,16 @@ pub fn handle_error(error: CustomErrors) -> (StatusCode, Json<Value>) {
         },
         CustomErrors::POSTONLYRoute => {
             return (StatusCode::METHOD_NOT_ALLOWED, Json(json!({
+                "response": error.to_string()
+            })))
+        },
+        CustomErrors::RequiresAuthorisation => {
+            return (StatusCode::UNAUTHORIZED, Json(json!({
+                "response": error.to_string()
+            })))
+        },
+        CustomErrors::AdminOnly => {
+            return (StatusCode::FORBIDDEN, Json(json!({
                 "response": error.to_string()
             })))
         },

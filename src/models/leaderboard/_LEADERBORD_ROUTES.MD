@@ -13,6 +13,8 @@
 
 Returns the number of records meeting the filter conditions passed to it.
 
+Returns the number of records possessed by a user
+
 ### leaderboard_web.rs
 
 Takes in a set of filtering and ordering conditions and returns a set of paginated? results

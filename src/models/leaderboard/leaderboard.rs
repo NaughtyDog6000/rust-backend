@@ -25,15 +25,15 @@ const ANONYMOUS_USER_RECORD_MAX: i32 = 10;
 
 #[derive(Debug, Deserialize)]
 pub struct LeaderboardQueryParams {
-    visibility: VisibilityEnum,
-    uploaded_after: i64, 
-    uploaded_before: i64, 
-    game_mode: GamemodeEnum,
-    order_by: OrderByEnum,
-    order_ascending: bool,
+    pub visibility: VisibilityEnum,
+    pub uploaded_after: i64, 
+    pub uploaded_before: i64, 
+    pub game_mode: GamemodeEnum,
+    pub order_by: OrderByEnum,
+    pub order_ascending: bool,
 
-    page_length: i32,
-    page_offset: i32,
+    pub page_length: i32,
+    pub page_offset: i32,
 }
 
 impl Default for LeaderboardQueryParams {
@@ -52,7 +52,7 @@ impl Default for LeaderboardQueryParams {
 }
 
 #[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
-struct LeaderboardRecord {
+pub struct LeaderboardRecord {
     pub username: String,
     pub epoch_upload_time: i64,
     pub epoch_game_start_time: i64,
@@ -63,7 +63,7 @@ struct LeaderboardRecord {
 
 /// the total records meeting the current filters
 #[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
-struct TotalRecords {
+pub struct TotalRecords {
     pub total_records: i64,
 }
 
@@ -143,12 +143,14 @@ pub async fn leaderboard(
     JOIN users ON scores.user_id = users.id
     WHERE 
         scores.game_mode = $1 AND
-        scores.epoch_upload_time BETWEEN $2 AND $3 
-    ORDER BY $4
-    LIMIT $5 OFFSET $6;
+        $2
+        scores.epoch_upload_time BETWEEN $3 AND $4 
+    ORDER BY $5
+    LIMIT $6 OFFSET $7;
 
      ")
     .bind(&query_params.game_mode.to_string())
+    .bind("")
     .bind(&query_params.uploaded_after)
     .bind(&query_params.uploaded_before)
     .bind(&order_condition)

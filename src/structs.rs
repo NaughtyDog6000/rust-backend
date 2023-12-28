@@ -72,6 +72,17 @@ pub enum VisibilityEnum {
     Public,
 }
 
+impl ToString for VisibilityEnum {
+    fn to_string(&self) -> String {
+        match self {
+            VisibilityEnum::Public => String::from("Public"),
+            VisibilityEnum::FriendsOnly => String::from("Friends"),
+            VisibilityEnum::Private => String::from("Private"),
+        }
+    }
+}
+
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum GamemodeEnum {
     Default,
