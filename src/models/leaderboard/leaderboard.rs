@@ -143,7 +143,6 @@ pub async fn leaderboard(
     JOIN users ON scores.user_id = users.id
     WHERE 
         scores.game_mode = $1 AND
-        $2
         scores.epoch_upload_time BETWEEN $3 AND $4 
     ORDER BY $5
     LIMIT $6 OFFSET $7;

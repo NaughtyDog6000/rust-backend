@@ -76,7 +76,7 @@ pub async fn upload_score(
     if res.is_ok() {
         info!("response: {:?}", &res.unwrap());
         return (StatusCode::ALREADY_REPORTED, 
-            Json(json!("this score has already been uploaded")));
+            Json(json!({"error": "this score has already been uploaded"})));
     }
     
     // if  { return (StatusCode::ALREADY_REPORTED, Json(json!("this game was already uploaded"))); },
@@ -99,6 +99,6 @@ pub async fn upload_score(
 
     info!("{:?}", resp);
     // (StatusCode::OK, Json(json!(format!("length: {}, offset: {}.",length,offset))))
-    (StatusCode::OK, Json(json!("score record creation successful")))
+    (StatusCode::OK, Json(json!({"response": "score record creation successful"})))
 
 }
