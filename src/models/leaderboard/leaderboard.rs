@@ -172,7 +172,9 @@ pub async fn leaderboard(
     println!("{:#?}, \ntotal records {:#?}", records, total_records);
 
     return (StatusCode::OK, Json(json!({
-        "total_records": total_records.total_records,
         "page_records": records,
+        "total_records": total_records.total_records,
+        "page_length": query_params.page_length,
+        "page_offset": query_params.page_offset,
     })));
 }
