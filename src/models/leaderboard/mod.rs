@@ -11,7 +11,7 @@ pub mod number_of_records;
 
 pub fn router() -> Router {
     Router::new()
-    .route("/leaderboard/scores",get(leaderboard))
+    .route("/leaderboard/scores",get(leaderboard).post(leaderboard))
     .route("/leaderboard/number_of_records",get(total_records))
     .route("/leaderboard/number_of_records/custom",get(total_records_custom))
     .route("/leaderboard/position", get(user_position))
