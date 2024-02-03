@@ -103,6 +103,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
     .merge(models::account_managment::router())
     .merge(models::profile_managment::router())
     .merge(models::_old_routes::router())
+    .merge(models::utilities::router())
 
     .layer(cors) //-- for testing
     .layer(Extension(admin_key))

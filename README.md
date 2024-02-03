@@ -13,6 +13,7 @@ it will include: **Accounts**, Player **Achievements** (if I get round to it), *
 new list:
 
 [ ] - route for (non-private) user info (/who_am_i) (username, highscore, most recent game, etc)
+[ ] - route for checking if a username is a valid user or not
 
 ### Small notes
 
