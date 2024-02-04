@@ -15,6 +15,12 @@ new list:
 [ ] - route for (non-private) user info (/who_am_i) (username, highscore, most recent game, etc)
 [ ] - route for checking if a username is a valid user or not
 
+## How Routes should respond
+
+**"error": value** - for retruning errors via json (should be handled by the handle_error() function)
+**"response": value** - for returning a message in text (e.g. response: "user not found")
+**"respnse/error": value, "data": value** - for returning data from the request
+
 ### Small notes
 
 **cargo run** - runs the server **without** migrating the DB first
