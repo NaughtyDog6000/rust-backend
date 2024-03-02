@@ -1,33 +1,34 @@
-use std::{fmt::Debug, collections::HashMap};
-use serde::{Deserialize, Serialize};
 use axum::{
-    Extension, Json,
-    http::{StatusCode, HeaderMap},
+    extract::Query,
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
-    extract::Query
+    Extension, Json,
+};
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, fmt::Debug};
+
+use serde_json::{json, Value};
+use sqlx::{pool, postgres::PgRow, PgPool};
+
+use crate::{
+    errors::{handle_error, CustomErrors},
+    structs::{GamemodeEnum, OrderByEnum, User, VisibilityEnum},
+    utils::{self, check_token, get_timestamp},
 };
 
-use sqlx::{pool, PgPool, postgres::PgRow};
-use serde_json::{json, Value};
-
-use crate::{structs::{VisibilityEnum, GamemodeEnum, OrderByEnum, User}, utils::{check_token, self, get_timestamp}, errors::{handle_error, CustomErrors}};
-
 const SIGNED_IN_USER_RECORD_MAX: i32 = 50;
-const ANONYMOUS_USER_RECORD_MAX: i32 = 10; 
-
-
+const ANONYMOUS_USER_RECORD_MAX: i32 = 10;
 
 // visibility: global/friends/own
 // game_mode: default/Hardcore
-// order_by: score, most_recent 
+// order_by: score, most_recent
 // order: decending/ascending
-
 
 #[derive(Debug, Deserialize)]
 pub struct LeaderboardQueryParams {
     pub visibility: VisibilityEnum,
-    pub uploaded_after: i64, 
-    pub uploaded_before: i64, 
+    pub uploaded_after: i64,
+    pub uploaded_before: i64,
     pub game_mode: GamemodeEnum,
     pub order_by: OrderByEnum,
     pub order_ascending: bool,
@@ -38,13 +39,13 @@ pub struct LeaderboardQueryParams {
 
 impl Default for LeaderboardQueryParams {
     fn default() -> Self {
-        Self { 
-            page_length: 10, 
-            page_offset: 0, 
-            visibility: VisibilityEnum::Public, 
-            game_mode: GamemodeEnum::Default, 
-            order_by: OrderByEnum::Score, 
-            order_ascending: false,  
+        Self {
+            page_length: 10,
+            page_offset: 0,
+            visibility: VisibilityEnum::Public,
+            game_mode: GamemodeEnum::Default,
+            order_by: OrderByEnum::Score,
+            order_ascending: false,
             uploaded_after: 0,
             uploaded_before: get_timestamp(),
         }
@@ -67,26 +68,21 @@ pub struct TotalRecords {
     pub total_records: i64,
 }
 
-
 struct LeaderboardResponseStruct {
     pub time_sent: i64,
     pub page_length: i32,
     pub page_offset: i32,
     pub total_records: i32,
     pub records: Vec<LeaderboardRecord>,
-
 }
 
-
-/// 
+///
 pub async fn leaderboard(
     Extension(pool): Extension<PgPool>,
     headers: HeaderMap,
-    Json(query_params): Json<Option<LeaderboardQueryParams>>
-    
+    Json(query_params): Json<Option<LeaderboardQueryParams>>,
 ) -> (StatusCode, Json<Value>) {
     let query_params = query_params.unwrap_or_default();
-
 
     let auth_header = headers.get("auth");
     if auth_header.is_none() {
@@ -95,32 +91,40 @@ pub async fn leaderboard(
         // only allow  10 records to be requested at a time
 
         if query_params.page_length > ANONYMOUS_USER_RECORD_MAX {
-            return (StatusCode::BAD_REQUEST, Json(json!({
-                "response": "anonymous/non-signed in users can only request 10 records at a time"
-            })));
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "response": "anonymous/non-signed in users can only request 10 records at a time"
+                })),
+            );
         }
-        
+
         // if a person who is not signed in is trying to see their own/friends records...
         if query_params.visibility != VisibilityEnum::Public {
-            return (StatusCode::BAD_REQUEST, Json(json!({
-                "response": "non-signed in users cannot see their own/friends records becuase they have none"
-            })))
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "response": "non-signed in users cannot see their own/friends records becuase they have none"
+                })),
+            );
         }
     } else {
         let auth_token = auth_header.unwrap().to_str().unwrap().to_owned();
         if !check_token(&pool, auth_token).await {
             return handle_error(CustomErrors::BadToken);
         }
-        
+
         if query_params.page_length > SIGNED_IN_USER_RECORD_MAX {
             return handle_error(CustomErrors::RequestAmount);
         }
     }
 
     // CURRENT IMPL DOES NOT SUPPORT VIEWING FRIENDS SCORES & GAMEMODES OTHER THAN DEFAULT
-    if query_params.visibility != VisibilityEnum::Public || query_params.game_mode != GamemodeEnum::Default {
+    if query_params.visibility != VisibilityEnum::Public
+        || query_params.game_mode != GamemodeEnum::Default
+    {
         return handle_error(CustomErrors::Unimplemented);
-    } 
+    }
 
     // if change the order by depending on if the request is for ascending or decending order
     let mut order_direction: String = String::from("DESC");
@@ -131,7 +135,8 @@ pub async fn leaderboard(
     let order_condition = format!("{} {}", query_params.order_by.to_string(), order_direction);
     println!("{}", order_condition);
 
-    let res = sqlx::query_as::<_, LeaderboardRecord>("
+    let res = sqlx::query_as::<_, LeaderboardRecord>(
+        "
     SELECT 
         scores.epoch_upload_time,
         scores.epoch_game_start_time,
@@ -147,7 +152,8 @@ pub async fn leaderboard(
     ORDER BY $5
     LIMIT $6 OFFSET $7;
 
-     ")
+     ",
+    )
     .bind(&query_params.game_mode.to_string())
     .bind("")
     .bind(&query_params.uploaded_after)
@@ -157,24 +163,34 @@ pub async fn leaderboard(
     .bind(&query_params.page_offset)
     .fetch_all(&pool)
     .await;
-    if res.is_err() { return handle_error(CustomErrors::SQLXError(res.unwrap_err())); }
+    if res.is_err() {
+        return handle_error(CustomErrors::SQLXError(res.unwrap_err()));
+    }
     let records = res.unwrap();
 
-
-    let res = sqlx::query_as::<_, TotalRecords>("
+    let res = sqlx::query_as::<_, TotalRecords>(
+        "
     SELECT COUNT(*) AS total_records
     FROM scores
     JOIN users ON scores.user_id = users.id;
-    ").fetch_one(&pool).await;
-    if res.is_err() {return handle_error(CustomErrors::SQLXError(res.unwrap_err())); }
+    ",
+    )
+    .fetch_one(&pool)
+    .await;
+    if res.is_err() {
+        return handle_error(CustomErrors::SQLXError(res.unwrap_err()));
+    }
 
     let total_records = res.unwrap();
     println!("{:#?}, \ntotal records {:#?}", records, total_records);
 
-    return (StatusCode::OK, Json(json!({
-        "page_records": records,
-        "total_records": total_records.total_records,
-        "page_length": query_params.page_length,
-        "page_offset": query_params.page_offset,
-    })));
+    return (
+        StatusCode::OK,
+        Json(json!({
+            "page_records": records,
+            "total_records": total_records.total_records,
+            "page_length": query_params.page_length,
+            "page_offset": query_params.page_offset,
+        })),
+    );
 }

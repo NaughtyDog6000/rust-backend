@@ -1,23 +1,29 @@
-use axum::{Extension, Json, Router, routing::get, routing::post, http::{StatusCode, HeaderMap}, response::{IntoResponse, Response}, extract::{Query, Multipart}};
-use log::{warn, info, trace, error};
-use serde::Deserialize;
-use sqlx::{pool, PgPool};
-use serde_json::{json, Value};
-use std::{io::Write, fs};
-use uuid::Uuid;
 use crate::errors::{handle_error, CustomErrors};
-
-
-
-
+use axum::{
+    extract::{Multipart, Query},
+    http::{HeaderMap, StatusCode},
+    response::{IntoResponse, Response},
+    routing::get,
+    routing::post,
+    Extension, Json, Router,
+};
+use log::{error, info, trace, warn};
+use serde::Deserialize;
+use serde_json::{json, Value};
+use sqlx::{pool, PgPool};
+use std::{fs, io::Write};
+use uuid::Uuid;
 
 pub fn router() -> Router {
     Router::new()
-
 }
 
 pub async fn get_admin_create_achievement() -> axum::response::Html<&'static str> {
-    include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/src/html/create_achievement_form.html")).into()
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/html/create_achievement_form.html"
+    ))
+    .into()
 }
 
 #[derive(Debug)]
@@ -28,16 +34,20 @@ struct Achievement {
     pub unlock_code: Option<String>,
 }
 
-
 pub async fn admin_create_achievement(
     Extension(pool): Extension<PgPool>,
     Extension(admin_key): Extension<String>,
     headers: HeaderMap,
-    mut multipart: Multipart
+    mut multipart: Multipart,
 ) {
     let mut authorised: bool = false;
     let mut image_data: Option<Vec<u8>> = None;
-    let mut achievement: Achievement = Achievement { name: None, description: None, tier: None, unlock_code: None };
+    let mut achievement: Achievement = Achievement {
+        name: None,
+        description: None,
+        tier: None,
+        unlock_code: None,
+    };
 
     println!("daowjdpaw");
     // THE NEXT 3 LINES ARE taken from: https://stackoverflow.com/q/76297891/21365457
@@ -52,42 +62,42 @@ pub async fn admin_create_achievement(
                 match temp {
                     Ok(formadmincode) => {
                         if formadmincode != admin_key {
-                            warn!("an attempt at creating a form with the wrong admin code was made");
+                            warn!(
+                                "an attempt at creating a form with the wrong admin code was made"
+                            );
                             // todo!() Proper auth for admins
                         } else {
                             authorised = true;
                         }
-                    },
+                    }
                     Err(e) => {
                         todo!()
                     }
                 }
-            },
+            }
             "icon" => {
-
                 image_data = Some(data.to_vec());
 
                 // todo!()
-            },
+            }
             "name" => {
                 let temp = String::from_utf8(data.to_vec());
                 match temp {
                     Ok(name) => {
                         achievement.name = Some(name);
-                    },
+                    }
                     Err(_) => todo!(),
                 }
-            },
+            }
             "description" => {
                 let temp = String::from_utf8(data.to_vec());
                 match temp {
                     Ok(description) => {
                         achievement.description = Some(description);
-                    },
+                    }
                     Err(_) => todo!(),
                 }
-
-            },
+            }
             "tier" => {
                 let temp = String::from_utf8(data.to_vec());
                 if temp.is_err() {
@@ -97,10 +107,10 @@ pub async fn admin_create_achievement(
                 match tier {
                     Ok(tier) => {
                         achievement.tier = Some(tier);
-                    },
+                    }
                     Err(e) => todo!(),
                 }
-            },
+            }
             _ => {
                 error!("an unknown field was found in the form");
                 return;
@@ -109,7 +119,7 @@ pub async fn admin_create_achievement(
     }
 
     if image_data.is_none() {
-        return ;
+        return;
     }
     println!("achievement generated from the form: {:?}", achievement);
     match authorised {
@@ -118,47 +128,39 @@ pub async fn admin_create_achievement(
             if result.is_err() {
                 todo!();
             }
-
-
-
-        },
+        }
         false => todo!(),
     }
-
 
     return;
 }
 
-
-fn write_achievement_image_file(data: Vec<u8>) -> Result<String, CustomErrors>  {
+fn write_achievement_image_file(data: Vec<u8>) -> Result<String, CustomErrors> {
     let filepath = dotenv::var("IMAGESTOREPATH").expect("image path .env not set");
-                
+
     let filename = Uuid::new_v4().to_string() + ".png";
-    
+
     let fullpath = format!("{}{}", filepath, filename);
 
     let mut file = fs::File::create(fullpath);
     match file {
         Err(e) => {
             return Err(CustomErrors::FileError);
-        },
+        }
         Ok(mut file) => {
             file.write_all(&data).expect("file writing failed");
             return Ok(filename);
-        },
+        }
     }
 }
 
 fn upload_achievement_to_database(
     pool: PgPool,
-    achievement: Achievement
+    achievement: Achievement,
 ) -> Result<(), CustomErrors> {
     // -- verify that the required info is present --
 
-    // -- 
-
-
-
+    // --
 
     return Ok(());
 }

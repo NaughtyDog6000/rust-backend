@@ -1,19 +1,17 @@
-use serde::{Deserialize, Serialize};
 use axum::{
-    Extension, Json, Router,
-    routing::{get, post},
-    http::{StatusCode, HeaderMap},
+    extract::Query,
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
-    extract::Query
+    routing::{get, post},
+    Extension, Json, Router,
 };
-use sqlx::{pool, PgPool, postgres::PgRow};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use sqlx::{pool, postgres::PgRow, PgPool};
 
 use crate::errors::{handle_error, CustomErrors};
 
-/// gets the total number of public records on the leaderboard 
-pub async fn user_position(
-    Extension(pool): Extension<PgPool>,
-) -> (StatusCode, Json<Value>) {
+/// gets the total number of public records on the leaderboard
+pub async fn user_position(Extension(pool): Extension<PgPool>) -> (StatusCode, Json<Value>) {
     return handle_error(CustomErrors::Unimplemented);
 }

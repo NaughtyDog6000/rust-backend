@@ -1,6 +1,6 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use chrono::NaiveDateTime;
 
 use crate::utils::get_timestamp;
 // -- TABLES --
@@ -39,7 +39,7 @@ pub struct FriendRequest {
     pub id: i64,
     pub sender_id: i64,
     pub receiver_id: i64,
-    pub creation_timestamp: NaiveDateTime
+    pub creation_timestamp: NaiveDateTime,
 }
 
 #[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
@@ -48,11 +48,10 @@ pub struct FriendRecord {
     pub sender_id: i64,
     pub receiver_id: i64,
     pub creation_timestamp: NaiveDateTime,
-    pub acceptance_timestamp: NaiveDateTime
+    pub acceptance_timestamp: NaiveDateTime,
 }
 
 // -- END OF TABLES --
-
 
 // -- enums --
 
@@ -82,7 +81,6 @@ impl ToString for VisibilityEnum {
     }
 }
 
-
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum GamemodeEnum {
     Default,
@@ -104,7 +102,6 @@ pub enum OrderByEnum {
     MostRecent,
 }
 
-
 impl ToString for OrderByEnum {
     fn to_string(&self) -> String {
         match self {
@@ -116,14 +113,12 @@ impl ToString for OrderByEnum {
 
 // -- END OF enums --
 
-
 pub fn build_user(
     id: i64,
     username: String,
     email: String,
     password_hash: String,
     epoch_signup_time: Option<i64>,
-    
 ) -> User {
     let timestamp: i64 = epoch_signup_time.unwrap_or(get_timestamp());
     // if None is passed it gets the current timestamp, else it uses the passed val
@@ -135,12 +130,4 @@ pub fn build_user(
         password_hash: password_hash,
         epoch_signup_time: timestamp,
     }
-
 }
-
-
-
-
-
-
-

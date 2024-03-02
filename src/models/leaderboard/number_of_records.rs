@@ -1,54 +1,53 @@
-use serde::{Deserialize, Serialize};
 use axum::{
-    Extension, Json, Router,
-    routing::{get, post},
-    http::{StatusCode, HeaderMap},
+    extract::Query,
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
-    extract::Query
+    routing::{get, post},
+    Extension, Json, Router,
 };
-use sqlx::{pool, PgPool, postgres::PgRow};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use sqlx::{pool, postgres::PgRow, PgPool};
 
 use crate::errors::{handle_error, CustomErrors};
 
-use super::leaderboard::{TotalRecords, LeaderboardQueryParams};
+use super::leaderboard::{LeaderboardQueryParams, TotalRecords};
 
 /// gets the total number of public records on the leaderboard
-/// 
-/// Does not require Auth 
-pub async fn total_records(
-    Extension(pool): Extension<PgPool>,
-) -> (StatusCode, Json<Value>) {
-    let response = sqlx::query_as::<_, TotalRecords>("
+///
+/// Does not require Auth
+pub async fn total_records(Extension(pool): Extension<PgPool>) -> (StatusCode, Json<Value>) {
+    let response = sqlx::query_as::<_, TotalRecords>(
+        "
         SELECT COUNT(*) AS total_records
         FROM scores
         JOIN users ON scores.user_id = users.id;
-    ").fetch_one(&pool).await;
+    ",
+    )
+    .fetch_one(&pool)
+    .await;
 
     let total_records = response.unwrap();
 
-    return (StatusCode::OK, Json(json!(
-        total_records
-    )));
-
+    return (StatusCode::OK, Json(json!(total_records)));
 }
-
 
 /// gets the total number of records on the leaderboard meeting the filter conditions passed
 pub async fn total_records_custom(
     Extension(pool): Extension<PgPool>,
     headers: HeaderMap,
-    Json(body_params): Json<Option<LeaderboardQueryParams>>
+    Json(body_params): Json<Option<LeaderboardQueryParams>>,
 ) -> (StatusCode, Json<Value>) {
     let body_params: LeaderboardQueryParams = body_params.unwrap_or_default();
 
     let auth_header = headers.get("auth");
 
     if auth_header.is_none() {
-        return handle_error(CustomErrors::RequiresAuthorisation)
+        return handle_error(CustomErrors::RequiresAuthorisation);
     }
 
-    let response = sqlx::query_as::<_, TotalRecords>("
+    let response = sqlx::query_as::<_, TotalRecords>(
+        "
     SELECT COUNT(*) AS total_records
     FROM scores
     JOIN users ON scores.user_id = users.id;
@@ -57,7 +56,8 @@ pub async fn total_records_custom(
         scores.visibility = $2 AND
         scores.epoch_upload_time BETWEEN $3 AND $4
         
-    ")
+    ",
+    )
     .bind(&body_params.game_mode.to_string())
     .bind(&body_params.visibility.to_string())
     .bind(&body_params.uploaded_after)
@@ -74,12 +74,7 @@ pub async fn total_records_custom(
 }
 
 /// returns the number of public records in the database
-/// Optionally 
-pub fn get_total_number_of_records(
-    pool: &PgPool,
-    user_id: Option<i64>
-) {
-    if user_id.is_some() {
-
-    }
+/// Optionally
+pub fn get_total_number_of_records(pool: &PgPool, user_id: Option<i64>) {
+    if user_id.is_some() {}
 }

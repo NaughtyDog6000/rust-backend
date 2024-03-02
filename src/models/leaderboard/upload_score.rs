@@ -1,21 +1,23 @@
 use std::string;
 
 use axum::{
-    Extension, Json, Router,
-    routing::{get, post},
-    http::{StatusCode, HeaderMap},
+    extract::Query,
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
-    extract::Query
+    routing::{get, post},
+    Extension, Json, Router,
 };
 
-use log::{warn, info, trace, error};
+use log::{error, info, trace, warn};
 use serde::Deserialize;
-use sqlx::{pool, PgPool};
 use serde_json::{json, Value};
+use sqlx::{pool, PgPool};
 
-use crate::{structs::{Score, User}, 
-            utils::{check_token, get_user, get_timestamp, get_datetime_utc}, errors::handle_error};
-
+use crate::{
+    errors::handle_error,
+    structs::{Score, User},
+    utils::{check_token, get_datetime_utc, get_timestamp, get_user},
+};
 
 #[derive(Deserialize)]
 pub struct UploadScoreRequestParams {
@@ -25,19 +27,21 @@ pub struct UploadScoreRequestParams {
     epoch_game_end_time: i64,
 }
 
-
-pub async fn upload_score(    
+pub async fn upload_score(
     Extension(pool): Extension<PgPool>,
     headers: HeaderMap,
     Json(request): Json<UploadScoreRequestParams>,
 ) -> (StatusCode, Json<Value>) {
     let auth_token = headers.get("auth");
     if auth_token.is_none() {
-        return (StatusCode::BAD_REQUEST, Json(json!({
-            "response": "token not present you melon"
-        })));
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "response": "token not present you melon"
+            })),
+        );
     }
-    let auth_token: String = auth_token.unwrap().to_str().unwrap().to_owned(); 
+    let auth_token: String = auth_token.unwrap().to_str().unwrap().to_owned();
 
     // -- parse the Request Params into struct --
 
@@ -57,33 +61,33 @@ pub async fn upload_score(
         return handle_error(result.unwrap_err());
     }
     let user: User = result.unwrap();
-    // -- apply limitations (request spam & invalid scores check) -- 
-    
+    // -- apply limitations (request spam & invalid scores check) --
+
     warn!("limitations for spam and score validation checks not complete");
 
     // -- make query to database for a matching game to prevent double upload --
 
-
     let res = sqlx::query_as::<_, Score>(
         "SELECT * FROM scores
-        WHERE user_id = $1 AND epoch_game_start_time = $2;" //select one where user id & start time matches
+        WHERE user_id = $1 AND epoch_game_start_time = $2;", //select one where user id & start time matches
     )
     .bind(user.id)
     .bind(request.epoch_game_start_time)
-    .fetch_one(&pool).await;
+    .fetch_one(&pool)
+    .await;
 
     // if it already exists return an error (already uploaded).
     if res.is_ok() {
         info!("response: {:?}", &res.unwrap());
-        return (StatusCode::ALREADY_REPORTED, 
-            Json(json!({"error": "this score has already been uploaded"})));
+        return (
+            StatusCode::ALREADY_REPORTED,
+            Json(json!({"error": "this score has already been uploaded"})),
+        );
     }
-    
+
     // if  { return (StatusCode::ALREADY_REPORTED, Json(json!("this game was already uploaded"))); },
 
-
     // upload the record to the scores table
-
 
     let resp = sqlx::query("
     INSERT INTO scores (user_id, score, game_mode, epoch_upload_time, epoch_game_start_time, epoch_game_end_time)
@@ -99,6 +103,8 @@ pub async fn upload_score(
 
     info!("{:?}", resp);
     // (StatusCode::OK, Json(json!(format!("length: {}, offset: {}.",length,offset))))
-    (StatusCode::OK, Json(json!({"response": "score record creation successful"})))
-
+    (
+        StatusCode::OK,
+        Json(json!({"response": "score record creation successful"})),
+    )
 }
